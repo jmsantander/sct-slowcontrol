@@ -50,69 +50,213 @@ double Target_status::get_temperature()
 
 class Target_settings
 {
-    double desired;
-    double min;
-    double max;
-    double critical_min;
-    double critical_max;
+private:
+    double voltage_desired;
+    double voltage_min;
+    double voltage_max;
+    double voltage_critical_min;
+    double voltage_critical_max;
+
+    double current_desired;
+    double current_min;
+    double current_max;
+    double current_critical_min;
+    double current_critical_max;
+
+    double temperature_desired;
+    double temperature_min;
+    double temperature_max;
+    double temperature_critical_min;
+    double temperature_critical_max;
 public:
-    void set_desired(double new_desired);
-    double get_desired();
-    void set_min(double new_min);
-    double get_min();
-    void set_max(double new_max);
-    double get_max();
-    void set_critical_min(double new_critical_min);
-    double get_critical_min();
-    void set_critical_max(double new_critical_max);
-    double get_critical_max();
+    void set_voltage_desired(double new_voltage_desired);
+    double get_voltage_desired();
+    void set_voltage_min(double new_voltage_min);
+    double get_voltage_min();
+    void set_voltage_max(double new_voltage_max);
+    double get_voltage_max();
+    void set_voltage_critical_min(double new_voltage_critical_min);
+    double get_voltage_critical_min();
+    void set_voltage_critical_max(double new_voltage_critical_max);
+    double get_voltage_critical_max();
+
+    void set_current_desired(double new_current_desired);
+    double get_current_desired();
+    void set_current_min(double new_current_min);
+    double get_current_min();
+    void set_current_max(double new_current_max);
+    double get_current_max();
+    void set_current_critical_min(double new_current_critical_min);
+    double get_current_critical_min();
+    void set_current_critical_max(double new_current_critical_max);
+    double get_current_critical_max();
+
+    void set_temperature_desired(double new_temperature_desired);
+    double get_temperature_desired();
+    void set_temperature_min(double new_temperature_min);
+    double get_temperature_min();
+    void set_temperature_max(double new_temperature_max);
+    double get_temperature_max();
+    void set_temperature_critical_min(double new_temperature_critical_min);
+    double get_temperature_critical_min();
+    void set_temperature_critical_max(double new_temperature_critical_max);
+    double get_temperature_critical_max();
 };
 
-void Target_settings::set_desired(double new_desired)
+// Voltage getters and setters
+
+void Target_settings::set_voltage_desired(double new_voltage_desired)
 {
-    desired = new_desired;
+    voltage_desired = new_voltage_desired;
 }
 
-double Target_settings::get_desired()
+double Target_settings::get_voltage_desired()
 {
-    return desired;
+    return voltage_desired;
 }
 
-void Target_settings::set_min(double new_min)
+void Target_settings::set_voltage_min(double new_voltage_min)
 {
-    min = new_min;
+    voltage_min = new_voltage_min;
 }
 
-double Target_settings::get_min()
+double Target_settings::get_voltage_min()
 {
-    return min;
-}
-void Target_settings::set_max(double new_max)
-{
-    max = new_max;
+    return voltage_min;
 }
 
-double Target_settings::get_max()
+void Target_settings::set_voltage_max(double new_voltage_max)
 {
-    return max;
-}
-void Target_settings::set_critical_max(double new_critical_max)
-{
-    critical_max = new_critical_max;
+    voltage_max = new_voltage_max;
 }
 
-double Target_settings::get_critical_max()
+double Target_settings::get_voltage_max()
 {
-    return critical_max;
-}
-void Target_settings::set_critical_min(double new_critical_min)
-{
-    critical_min = new_critical_min;
+    return voltage_max;
 }
 
-double Target_settings::get_critical_min()
+void Target_settings::set_voltage_critical_min(double new_voltage_critical_min)
 {
-    return critical_min;
+    voltage_critical_min = new_voltage_critical_min;
+}
+
+double Target_settings::get_voltage_critical_min()
+{
+    return voltage_critical_min;
+}
+
+void Target_settings::set_voltage_critical_max(double new_voltage_critical_max)
+{
+    voltage_critical_max = new_voltage_critical_max;
+}
+
+double Target_settings::get_voltage_critical_max()
+{
+    return voltage_critical_max;
+}
+
+// Current getters and setters
+
+void Target_settings::set_current_desired(double new_current_desired)
+{
+    current_desired = new_current_desired;
+}
+
+double Target_settings::get_current_desired()
+{
+    return current_desired;
+}
+
+void Target_settings::set_current_min(double new_current_min)
+{
+    current_min = new_current_min;
+}
+
+double Target_settings::get_current_min()
+{
+    return current_min;
+}
+
+void Target_settings::set_current_max(double new_current_max)
+{
+    current_max = new_current_max;
+}
+
+double Target_settings::get_current_max()
+{
+    return current_max;
+}
+
+void Target_settings::set_current_critical_min(double new_current_critical_min)
+{
+    current_critical_min = new_current_critical_min;
+}
+
+double Target_settings::get_current_critical_min()
+{
+    return current_critical_min;
+}
+
+void Target_settings::set_current_critical_max(double new_current_critical_max)
+{
+    current_critical_max = new_current_critical_max;
+}
+
+double Target_settings::get_current_critical_max()
+{
+    return current_critical_max;
+}
+
+// Temperature getters and setters
+
+void Target_settings::set_temperature_desired(double new_temperature_desired)
+{
+    temperature_desired = new_temperature_desired;
+}
+
+double Target_settings::get_temperature_desired()
+{
+    return temperature_desired;
+}
+
+void Target_settings::set_temperature_min(double new_temperature_min)
+{
+    temperature_min = new_temperature_min;
+}
+
+double Target_settings::get_temperature_min()
+{
+    return temperature_min;
+}
+
+void Target_settings::set_temperature_max(double new_temperature_max)
+{
+    temperature_max = new_temperature_max;
+}
+
+double Target_settings::get_temperature_max()
+{
+    return temperature_max;
+}
+
+void Target_settings::set_temperature_critical_max(double new_temperature_critical_max)
+{
+    temperature_critical_max = new_temperature_critical_max;
+}
+
+double Target_settings::get_temperature_critical_max()
+{
+    return temperature_critical_max;
+}
+
+void Target_settings::set_temperature_critical_min(double new_temperature_critical_min)
+{
+    temperature_critical_min = new_temperature_critical_min;
+}
+
+double Target_settings::get_temperature_critical_min()
+{
+    return temperature_critical_min;
 }
 
 class Target
