@@ -1,0 +1,6 @@
+package slow_control;
+
+message Backplane {
+    optional float voltage = 1;
+    optional float current = 2;
+}
