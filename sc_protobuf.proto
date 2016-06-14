@@ -3,4 +3,6 @@ package slow_control;
 message Backplane {
     optional float voltage = 1;
     optional float current = 2;
+    optional float desired_voltage = 3;
+    optional float desired_current = 4;
 }
