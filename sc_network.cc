@@ -14,11 +14,13 @@
 #include <netdb.h>
 
 #include <string>
+#include <algorithm>
 
 #define PORT "3141" // the port users will be connecting on
 
 #define BACKLOG 10 // how many pending connections queue will hold
-#define MAXDATASIZE 1000 // max number of bytes we can get at once
+#define HEADER_LENGTH 2 // length of network short
+#define MAX_MESSAGE_LENGTH 512 // maximum packet size not including header
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -30,7 +32,7 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int open_connection(int &new_connection, char *hostname)
+bool open_connection(int &new_connection, char *hostname)
 {
     int connection; // listen on connection
     struct addrinfo hints, *servinfo, *p;
@@ -128,29 +130,57 @@ void close_connection(int connection)
     close(connection);
 }
 
-int send_message(int connection, std::string message)
+bool send_message(int connection, std::string message)
 {
-    if (send(connection, message.c_str(), message.length(), 0) == -1) {
-        perror("send");
-        return false;
+    // Prepend total message length as a header for use by receiver
+    short header = htons(message.length()); // use portable format
+    const int total_length = HEADER_LENGTH + message.length();
+    char buffer[total_length];
+    memcpy(buffer, &header, HEADER_LENGTH);
+    memcpy(buffer+HEADER_LENGTH, message.c_str(), message.length());
+   
+    // Send repeatedly until entire message sent
+    int bytes_sent = 0;
+    int n;
+    while (bytes_sent < total_length) {
+        n = send(connection, buffer+bytes_sent,
+                std::min((total_length - bytes_sent), MAX_MESSAGE_LENGTH), 0);
+        if (n == -1) {
+            perror("send");
+            return false;
+        }
+        bytes_sent += n;
     }
     return true;
 }
 
-int receive_message(int connection, std::string &message)
+bool receive_message(int connection, std::string &message)
 {
-    int numbytes;
-    char buffer[MAXDATASIZE];
+    int remaining_length, numbytes;
+    char header_buffer[HEADER_LENGTH];
+    char message_buffer[MAX_MESSAGE_LENGTH];
 
-    if ((numbytes = recv(connection, buffer, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        return false;
+    // Read in length of message from header
+    if ((numbytes = recv(connection, header_buffer, HEADER_LENGTH, 0)) <= 0) {
+        if (numbytes < 0)
+            perror("recv");
+        return false; // either error or, if 0, socket was closed
     }
+    remaining_length = ntohs(*(short*)header_buffer);
 
-    if (numbytes == 0)
-        return false;
-
-    message.assign(buffer, numbytes);
+    // Read in message
+    message.clear();
+    while (remaining_length > 0) {
+        if ((numbytes = recv(connection, message_buffer,
+                        std::min(remaining_length, MAX_MESSAGE_LENGTH),
+                        0)) <= 0) {
+            if (numbytes < 0)
+                perror("recv");
+            return false; // either error or, if 0, socket was closed
+        }
+        message.append(message_buffer, numbytes);
+        remaining_length -= numbytes;
+    }
 
     return true;
 }
