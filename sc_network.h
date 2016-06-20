@@ -14,6 +14,11 @@
 // Holds networking information 
 struct Network_info {
     std::vector<int> connections;
+    std::string host_name; // server host
+    Network_info() {};
+    Network_info(std::string init_host_name) {
+        host_name = init_host_name;
+    }
 };
 
 /* Set up network and update netinfo, as needed for specified platform 
