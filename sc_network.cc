@@ -210,11 +210,12 @@ int receive_message(int connection, std::string &message)
     return 0;
 }
 
-/* Set up network and update netinfo, as needed for specified platform 
- * Specify platform as PI, SERVER, or GUI
+/* Set up network and update netinfo, as needed for specified device 
+ * Specify device as PI, SERVER, or GUI
  * Return true if setup successful, false if error */ 
-bool setup_network(Network_info &netinfo, int platform) {
-    switch (platform) {
+bool setup_network(Network_info &netinfo, int device) {
+    // Connect to other devices depending on the specified device
+    switch (device) {
         // Pi: connect to an open port on the server
         case PI:
         {
@@ -226,7 +227,7 @@ bool setup_network(Network_info &netinfo, int platform) {
                 return false;
             }
             std::cout << "connected to the server!" << std::endl;
-            netinfo.connections.push_back(server);
+            netinfo.connections.push_back(Connection(server));
             break;
         }
         // Server: wait for incoming connections from Pi and GUIs
@@ -239,7 +240,7 @@ bool setup_network(Network_info &netinfo, int platform) {
                 return false;
             }
             std::cout << "connected to the Pi!" << std::endl;
-            netinfo.connections.push_back(pi);
+            netinfo.connections.push_back(Connection(pi));
             std::cout << "connecting to the GUI..." << std::endl;
             int gui = -1; 
             if (!open_connection(gui, GUI_PORT)) {
@@ -247,7 +248,7 @@ bool setup_network(Network_info &netinfo, int platform) {
                 return false;
             }
             std::cout << "connected to the GUI!" << std::endl;
-            netinfo.connections.push_back(gui);
+            netinfo.connections.push_back(Connection(gui));
             break;
         }
         // GUI: connect to an open port on the server
@@ -261,28 +262,44 @@ bool setup_network(Network_info &netinfo, int platform) {
                 return false;
             }
             std::cout << "connected to the server!" << std::endl;
-            netinfo.connections.push_back(server);
+            netinfo.connections.push_back(Connection(server));
             break;
         }
-        default: // invalid platform specification
-            std::cout << "warning: invalid platform specified!" << std::endl;
+        default: // invalid device specification
+            std::cout << "warning: invalid device specified!" << std::endl;
             return false;
     }
+    // Set device for future reference
+    netinfo.device = device;
     return true;
 }
 
 /* Receive and optionally send messages to and from network, updating netinfo
- * as needed
+ * with any received messages and by removing any closed connections
+ *
+ * If outgoing message is empty string, will not send anything
  * Specify timeout as time to wait for remote response in ms, default 0.1s
+ * If timeout is set to be negative, will wait forever
+ *
  * Return true if incoming message read [and outgoing message sent]
  * Return true and set incoming_message to empty string if timed out
  * Return false if error or connection closed */
-bool update_network(Network_info &netinfo, std::string &incoming_message,
-        std::string outgoing_message, int timeout) {
-    return true;
-}
-bool update_network(Network_info &netinfo, std::string &incoming_message,
+bool update_network(Network_info &netinfo, std::string outgoing_message,
         int timeout) {
+    switch (netinfo.device) {
+        // Pi: Receive settings message from server
+        // GUI: Receive data message from server
+        case PI:
+        case GUI:
+        {
+            break;
+        }
+        // Server: Receive data from Pi and settings from GUI
+        case SERVER:
+        {
+            break;
+        }
+    }
     return true;
 }
 
@@ -290,9 +307,9 @@ bool update_network(Network_info &netinfo, std::string &incoming_message,
  * Return true on success, false if error */
 bool shutdown_network(Network_info &netinfo) {
     bool no_errors = true;
-    for (std::vector<int>::iterator iter = netinfo.connections.begin();
+    for (std::vector<Connection>::iterator iter = netinfo.connections.begin();
             iter != netinfo.connections.end(); ) {
-        if (close_connection(*iter)) {
+        if (close_connection(iter->socket)) {
             iter = netinfo.connections.erase(iter);
         } else {
             no_errors = false;
