@@ -239,12 +239,15 @@ bool setup_network(Network_info &netinfo, int platform) {
                 return false;
             }
             std::cout << "connected to the Pi!" << std::endl;
+            netinfo.connections.push_back(pi);
+            std::cout << "connecting to the GUI..." << std::endl;
             int gui = -1; 
             if (!open_connection(gui, GUI_PORT)) {
                 std::cout << "failed to connect to GUI." << std::endl;
                 return false;
             }
             std::cout << "connected to the GUI!" << std::endl;
+            netinfo.connections.push_back(gui);
             break;
         }
         // GUI: connect to an open port on the server
