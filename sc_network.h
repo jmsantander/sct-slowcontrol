@@ -4,23 +4,36 @@
 #define SC_NETWORK
 
 #include <string>
+#include <vector>
 
-/* Open a new connection on the socket with file descriptor new_connection.
- * If hostname is not set, default is to open a server and wait for incoming
- * connections.
- * If hostname is set, will connect to that host.
- * Return true on success, false on failure. */
-bool open_connection(int &new_connection, char *hostname=NULL);
+// Codes for automatically setting up networking on appropriate platform
+#define PI 0
+#define SERVER 1
+#define GUI 2
 
-// Close the connection on socket with file descriptor connection.
-void close_connection(int connection);
+// Holds networking information 
+struct Network_info {
+    std::vector<int> connections;
+};
 
-/* Send a message to socket with file descriptor connection.
- * Return true on success, false on failure. */
-bool send_message(int connection, std::string message);
+/* Set up network and update netinfo, as needed for specified platform 
+ * Specify platform as PI, SERVER, or GUI
+ * Return true if setup successful, false if error */ 
+bool setup_network(Network_info &netinfo, int platform);
 
-/* Receive a message from socket with file descriptor connection.
- * Return true on success, false on failure. */
-bool receive_message(int connection, std::string &message);
+/* Receive and optionally send messages to and from network, updating netinfo
+ * as needed
+ * Specify timeout as time to wait for remote response in ms, default 0.1s
+ * Return true if incoming message read [and outgoing message sent]
+ * Return true and set incoming_message to empty string if timed out
+ * Return false if error or connection closed */
+bool update_network(Network_info &netinfo, std::string &incoming_message,
+        std::string outgoing_message, int timeout=100);
+bool update_network(Network_info &netinfo, std::string &incoming_message,
+        int timeout=100);
+
+/* Close all connections in network, updating netinfo to reflect changes
+ * Return true on success, false if error */
+bool shutdown_network(Network_info &netinfo);
 
 #endif

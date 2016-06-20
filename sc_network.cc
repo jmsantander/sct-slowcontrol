@@ -32,6 +32,11 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+/* Open a new connection on the socket with file descriptor new_connection.
+ * If hostname is not set, default is to open a server and wait for incoming
+ * connections.
+ * If hostname is set, will connect to that host.
+ * Return true on success, false on failure. */
 bool open_connection(int &new_connection, char *hostname)
 {
     int connection; // listen on connection
@@ -125,18 +130,26 @@ bool open_connection(int &new_connection, char *hostname)
     return true;
 }
 
-void close_connection(int connection)
+/* Close the connection on socket with file descriptor connection.
+ * Return true on success, false on failure. */
+bool close_connection(int connection)
 {
-    close(connection);
+    if (close(connection) == -1)
+        return false;
+
+    return true;
 }
 
-bool send_message(int connection, std::string message)
+/* Send a message to socket with file descriptor connection.
+ * Return 0 on success, -1 on error. */
+int send_message(int connection, std::string message)
 {
     // Prepend total message length as a header for use by receiver
     short header = htons(message.length()); // use portable format
     const int total_length = HEADER_LENGTH + message.length();
     char buffer[total_length];
     memcpy(buffer, &header, HEADER_LENGTH);
+    // Intentionally do not copy null terminator from message.c_str()
     memcpy(buffer+HEADER_LENGTH, message.c_str(), message.length());
    
     // Send repeatedly until entire message sent
@@ -147,14 +160,16 @@ bool send_message(int connection, std::string message)
                 std::min((total_length - bytes_sent), MAX_MESSAGE_LENGTH), 0);
         if (n == -1) {
             perror("send");
-            return false;
+            return -1;
         }
         bytes_sent += n;
     }
-    return true;
+    return 0;
 }
 
-bool receive_message(int connection, std::string &message)
+/* Receive a message from socket with file descriptor connection.
+ * Return 0 on success, -1 on error, -2 on connection closed. */
+int receive_message(int connection, std::string &message)
 {
     int remaining_length, numbytes;
     char header_buffer[HEADER_LENGTH];
@@ -162,9 +177,11 @@ bool receive_message(int connection, std::string &message)
 
     // Read in length of message from header
     if ((numbytes = recv(connection, header_buffer, HEADER_LENGTH, 0)) <= 0) {
-        if (numbytes < 0)
+        if (numbytes < 0) {
             perror("recv");
-        return false; // either error or, if 0, socket was closed
+            return -1; // error
+        }
+        return -2; // socket was closed
     }
     remaining_length = ntohs(*(short*)header_buffer);
 
@@ -174,13 +191,15 @@ bool receive_message(int connection, std::string &message)
         if ((numbytes = recv(connection, message_buffer,
                         std::min(remaining_length, MAX_MESSAGE_LENGTH),
                         0)) <= 0) {
-            if (numbytes < 0)
+            if (numbytes < 0) {
                 perror("recv");
-            return false; // either error or, if 0, socket was closed
+                return -1; // error
+            }
+            return -2; // socket was closed
         }
         message.append(message_buffer, numbytes);
         remaining_length -= numbytes;
     }
 
-    return true;
+    return 0;
 }
