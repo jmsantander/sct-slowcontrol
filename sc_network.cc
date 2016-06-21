@@ -210,59 +210,86 @@ int receive_message(int connection, std::string &message)
     return 0;
 }
 
+// Count how many connections of the specified device are present in netinfo
+// Do not validate whether or not the connections actually work
+// Return the number of connections found
+int count_connections(Network_info &netinfo, int device)
+{
+    int connections = 0;
+    for (std::vector<Connection>::iterator iter = netinfo.connections.begin();
+            iter != netinfo.connections.end(); ++iter) {
+        if (iter->device == device) {
+            connections += 1;
+        }
+    }
+    return connections;
+}
+
 /* Set up network and update netinfo, as needed for specified device 
  * Specify device as PI, SERVER, or GUI
  * Return true if setup successful, false if error */ 
 bool setup_network(Network_info &netinfo, int device) {
-    // Connect to other devices depending on the specified device
+    // Not connected, so connect to other devices as required
     switch (device) {
         // Pi: connect to an open port on the server
         case PI:
         {
-            std::cout << "connecting to the server..." << std::endl;
-            int server = -1;
-            if (!open_connection(server, PI_PORT,
-                        netinfo.host_name.c_str())) {
-                std::cout << "failed to connect to server." << std::endl;
-                return false;
+            // Connect to a server if not already connected
+            if (count_connections(netinfo, SERVER) == 0) {
+                std::cout << "connecting to the server..." << std::endl;
+                int server = -1;
+                if (!open_connection(server, PI_PORT,
+                            netinfo.host_name.c_str())) {
+                    std::cout << "failed to connect to server." << std::endl;
+                    return false;
+                }
+                std::cout << "connected to the server!" << std::endl;
+                netinfo.connections.push_back(Connection(server, SERVER));
             }
-            std::cout << "connected to the server!" << std::endl;
-            netinfo.connections.push_back(Connection(server));
             break;
         }
         // Server: wait for incoming connections from Pi and GUIs
         case SERVER:
         {
-            std::cout << "connecting to the Pi..." << std::endl;
-            int pi = -1; 
-            if (!open_connection(pi, PI_PORT)) {
-                std::cout << "failed to connect to Pi." << std::endl;
-                return false;
+            // Connect to a Pi if not already connected
+            if (count_connections(netinfo, PI) == 0) {
+                std::cout << "connecting to the Pi..." << std::endl;
+                int pi = -1; 
+                if (!open_connection(pi, PI_PORT)) {
+                    std::cout << "failed to connect to Pi." << std::endl;
+                    return false;
+                }
+                std::cout << "connected to the Pi!" << std::endl;
+                netinfo.connections.push_back(Connection(pi, PI));
             }
-            std::cout << "connected to the Pi!" << std::endl;
-            netinfo.connections.push_back(Connection(pi));
-            std::cout << "connecting to the GUI..." << std::endl;
-            int gui = -1; 
-            if (!open_connection(gui, GUI_PORT)) {
-                std::cout << "failed to connect to GUI." << std::endl;
-                return false;
+            // Connect to a GUI if not already connected
+            if (count_connections(netinfo, GUI) == 0) {
+                std::cout << "connecting to the GUI..." << std::endl;
+                int gui = -1; 
+                if (!open_connection(gui, GUI_PORT)) {
+                    std::cout << "failed to connect to GUI." << std::endl;
+                    return false;
+                }
+                std::cout << "connected to the GUI!" << std::endl;
+                netinfo.connections.push_back(Connection(gui, GUI));
             }
-            std::cout << "connected to the GUI!" << std::endl;
-            netinfo.connections.push_back(Connection(gui));
             break;
         }
         // GUI: connect to an open port on the server
         case GUI:
         {
-            std::cout << "connecting to the server..." << std::endl;
-            int server = -1;
-            if (!open_connection(server, GUI_PORT,
-                        netinfo.host_name.c_str())) {
-                std::cout << "failed to connect to server." << std::endl;
-                return false;
+            // Connect to a server if not already connected
+            if (count_connections(netinfo, SERVER) == 0) {
+                std::cout << "connecting to the server..." << std::endl;
+                int server = -1;
+                if (!open_connection(server, GUI_PORT,
+                            netinfo.host_name.c_str())) {
+                    std::cout << "failed to connect to server." << std::endl;
+                    return false;
+                }
+                std::cout << "connected to the server!" << std::endl;
+                netinfo.connections.push_back(Connection(server, SERVER));
             }
-            std::cout << "connected to the server!" << std::endl;
-            netinfo.connections.push_back(Connection(server));
             break;
         }
         default: // invalid device specification
@@ -283,20 +310,83 @@ bool setup_network(Network_info &netinfo, int device) {
  *
  * Return true if incoming message read [and outgoing message sent]
  * Return true and set incoming_message to empty string if timed out
- * Return false if error or connection closed */
+ * Return false if error or connection closed
+ * Return false if could not properly set up network */
 bool update_network(Network_info &netinfo, std::string outgoing_message,
         int timeout) {
+    // Make sure network is properly set up
+    if (!(setup_network(netinfo, netinfo.device))) {
+        return false;
+    }
+    // Receive messages from all connections
+    int rv;
+    bool no_errors = true;
+    for (std::vector<Connection>::iterator iter = netinfo.connections.begin();
+            iter != netinfo.connections.end(); ) {
+        if ((rv = receive_message(iter->socket, iter->message)) < 0) {
+            if (rv == -1) { // error, but connection not closed
+                close_connection(iter->socket);
+            }
+            // Remove the connection from netinfo
+            iter = netinfo.connections.erase(iter);
+            no_errors = false;
+        } else {
+            ++iter;
+        }
+    }
+    if (!no_errors) {
+        // If errors occurred, return instead of attempting to send
+        return false;
+    }
+    // Send messages to connections as specified by device
     switch (netinfo.device) {
-        // Pi: Receive settings message from server
-        // GUI: Receive data message from server
+        // Pi or GUI: send message (data or settings) to server
         case PI:
         case GUI:
         {
+            // Skip sending if no outgoing message
+            if (outgoing_message.empty()) {
+                break;
+            }
+            // Send the message to the server
+            std::vector<Connection>::iterator iter;
+            for (iter = netinfo.connections.begin();
+                    iter != netinfo.connections.end(); ++iter) {
+                if (iter->device == SERVER) {
+                    if ((rv = send_message(iter->socket,
+                                    outgoing_message) == -1)) {
+                        return false;
+                    }
+                }
+            }
             break;
         }
-        // Server: Receive data from Pi and settings from GUI
+        // Server: send data to GUI and settings to Pi
         case SERVER:
         {
+            std::vector<Connection>::iterator iter_pi, iter_gui;
+            for (iter_pi = netinfo.connections.begin();
+                    iter_pi != netinfo.connections.end(); ++iter_pi) {
+                if (iter_pi->device == PI) {
+                    for (iter_gui = netinfo.connections.begin();
+                            iter_gui != netinfo.connections.end();
+                            ++iter_gui) {
+                        if (iter_gui->device == GUI) {
+                            // Send settings from the Pi to the GUI
+                            if ((rv = send_message(iter_gui->socket,
+                                            iter_pi->message) == -1)) {
+                                return false;
+                            }
+                            // Send data from the GUI to the Pi
+                            if ((rv = send_message(iter_pi->socket,
+                                            iter_gui->message) == -1)) {
+                                return false;
+                            }
+                        }
+                    }
+                    break; // assume only one Pi; at least, use only the first
+                }
+            }
             break;
         }
     }

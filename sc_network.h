@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-// Codes for automatically setting up networking on appropriate device
+// Device codes for automatically setting up networking
 #define PI 0
 #define SERVER 1
 #define GUI 2
@@ -14,10 +14,12 @@
 // Holds info for a single connection, including the incoming message
 struct Connection {
     int socket;
+    int device;
     std::string message;
     bool unread_message;
-    Connection(int init_socket) {
+    Connection(int init_socket, int init_device) {
         socket = init_socket;
+        device = init_device;
         unread_message = false;
     }
 };
