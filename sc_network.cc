@@ -6,10 +6,11 @@
 
 #include <cstdio>
 #include <cstring>
-#include <unistd.h>
 #include <cerrno>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
 #include <netinet/in.h>
 #include <netdb.h>
 
@@ -210,9 +211,9 @@ int receive_message(int connection, std::string &message)
     return 0;
 }
 
-// Count how many connections of the specified device are present in netinfo
-// Do not validate whether or not the connections actually work
-// Return the number of connections found
+/* Count how many connections of the specified device are present in netinfo
+ * Do not validate whether or not the connections actually work
+ * Return the number of connections found */
 int count_connections(Network_info &netinfo, int device)
 {
     int connections = 0;
@@ -225,11 +226,84 @@ int count_connections(Network_info &netinfo, int device)
     return connections;
 }
 
+/* Remove all connections containing any send or receive errors from netinfo
+ * Return true on success, false on failure */
+bool clean_connections(Network_info &netinfo)
+{
+    bool no_errors = true;
+    for (std::vector<Connection>::iterator iter = netinfo.connections.begin();
+            iter != netinfo.connections.end(); ) {
+        if ((iter->recv_status == MSG_CLOSED) ||
+                (iter->send_status == MSG_CLOSED)) {
+            iter = netinfo.connections.erase(iter);
+            continue;
+        } else if ((iter->recv_status == MSG_ERROR) ||
+                (iter->send_status == MSG_ERROR)) {
+            if (!close_connection(iter->socket)) {
+                no_errors = false;
+            }
+            iter = netinfo.connections.erase(iter);
+            continue;
+        } else {
+            ++iter;
+        }
+    }
+    return no_errors;
+}
+
+/* Use poll() to determine which connections are open for sending and receiving
+ * within the specified timeout in ms
+ * Return true on success, false on any error */
+bool poll_connections(Network_info &netinfo, int timeout)
+{
+    int rv;
+    const int n_connections = netinfo.connections.size();
+    struct pollfd ufds[n_connections];
+
+    // Set up pollfd structs
+    for (int i = 0; i < n_connections; i++) {
+        ufds[i].fd = netinfo.connections[i].socket;
+        ufds[i].events = POLLIN | POLLOUT;
+    }
+    
+    // Wait for events on the sockets, with the specified timeout
+    rv = poll(ufds, n_connections, timeout);
+    
+    // Check for error
+    if (rv == -1) {
+        return false;
+    }
+
+    // Record the results of the poll in netinfo
+    for (int i = 0; i < n_connections; i++) {
+        if (ufds[i].revents & POLLIN) {
+            netinfo.connections[i].recv_status = MSG_READY;
+        }
+        if (ufds[i].revents & POLLOUT) {
+            netinfo.connections[i].send_status = MSG_READY;
+        }
+        if (ufds[i].revents & POLLERR) {
+            netinfo.connections[i].recv_status = MSG_ERROR;
+            netinfo.connections[i].send_status = MSG_ERROR;
+        }
+        if (ufds[i].revents & POLLNVAL) {
+            netinfo.connections[i].recv_status = MSG_ERROR;
+            netinfo.connections[i].send_status = MSG_ERROR;
+        }
+        if (ufds[i].revents & POLLHUP) {
+            netinfo.connections[i].recv_status = MSG_CLOSED;
+            netinfo.connections[i].send_status = MSG_CLOSED;
+        }
+    }
+
+    return true;
+}
+
 /* Set up network and update netinfo, as needed for specified device 
  * Specify device as PI, SERVER, or GUI
  * Return true if setup successful, false if error */ 
-bool setup_network(Network_info &netinfo, int device) {
-    // Not connected, so connect to other devices as required
+bool setup_network(Network_info &netinfo, int device)
+{
     switch (device) {
         // Pi: connect to an open port on the server
         case PI:
@@ -313,30 +387,37 @@ bool setup_network(Network_info &netinfo, int device) {
  * Return false if error or connection closed
  * Return false if could not properly set up network */
 bool update_network(Network_info &netinfo, std::string outgoing_message,
-        int timeout) {
+        int timeout)
+{
     // Make sure network is properly set up
     if (!(setup_network(netinfo, netinfo.device))) {
+        return false;
+    }
+    // Determine which connections are ready to read and write
+    if (!poll_connections(netinfo, timeout)) {
         return false;
     }
     // Receive messages from all connections
     int rv;
     bool no_errors = true;
     for (std::vector<Connection>::iterator iter = netinfo.connections.begin();
-            iter != netinfo.connections.end(); ) {
-        if ((rv = receive_message(iter->socket, iter->message)) < 0) {
-            if (rv == -1) { // error, but connection not closed
-                close_connection(iter->socket);
-            }
-            // Remove the connection from netinfo
-            iter = netinfo.connections.erase(iter);
-            no_errors = false;
-        } else {
-            ++iter;
+            iter != netinfo.connections.end(); ++iter) {
+        // Read from connection only if ready to receive, otherwise skip
+        if (iter->recv_status != MSG_READY) {
+            continue;
         }
-    }
-    if (!no_errors) {
-        // If errors occurred, return instead of attempting to send
-        return false;
+        // Attempt to receive the message
+        if ((rv = receive_message(iter->socket, iter->message)) < 0) {
+            no_errors = false;
+            if (rv == -2) {
+                iter->recv_status = MSG_CLOSED;
+            } else {
+                iter->recv_status = MSG_ERROR;
+            }
+        } else {
+            // Successfully received the message
+            iter->recv_status = MSG_DONE;
+        }
     }
     // Send messages to connections as specified by device
     switch (netinfo.device) {
@@ -352,10 +433,19 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
             std::vector<Connection>::iterator iter;
             for (iter = netinfo.connections.begin();
                     iter != netinfo.connections.end(); ++iter) {
+                // Attempt to send to the server
                 if (iter->device == SERVER) {
-                    if ((rv = send_message(iter->socket,
-                                    outgoing_message) == -1)) {
-                        return false;
+                    // Send only if server is ready
+                    if (iter->send_status == MSG_READY) {
+                        // Attempt to send the message
+                        if ((rv = send_message(iter->socket,
+                                        outgoing_message)) < 0) {
+                            no_errors = false;
+                            iter->send_status = MSG_ERROR;
+                        } else {
+                            // Successfully sent the message
+                            iter->send_status = MSG_DONE;
+                        }
                     }
                 }
             }
@@ -372,30 +462,52 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
                             iter_gui != netinfo.connections.end();
                             ++iter_gui) {
                         if (iter_gui->device == GUI) {
-                            // Send settings from the Pi to the GUI
-                            if ((rv = send_message(iter_gui->socket,
-                                            iter_pi->message) == -1)) {
-                                return false;
+                            // Send settings from Pi to GUI only if both ready
+                            if ((iter_pi->recv_status == MSG_DONE) &&
+                                    (iter_gui->send_status == MSG_READY)) {
+                                // Attempt to send the message
+                                if ((rv = send_message(iter_gui->socket,
+                                                iter_pi->message)) < 0) {
+                                    no_errors = false;
+                                    iter_gui->send_status = MSG_ERROR;
+                                } else {
+                                    // Successfully sent the message
+                                    iter_gui->send_status = MSG_DONE;
+                                }
                             }
-                            // Send data from the GUI to the Pi
-                            if ((rv = send_message(iter_pi->socket,
-                                            iter_gui->message) == -1)) {
-                                return false;
+                            // Send data from GUI to Pi if both ready
+                            if ((iter_gui->recv_status == MSG_DONE) &&
+                                    (iter_pi->send_status == MSG_READY)) {
+                                // Attempt to send the message
+                                if ((rv = send_message(iter_pi->socket,
+                                                iter_gui->message)) < 0) {
+                                    no_errors = false;
+                                    iter_pi->send_status = MSG_ERROR;
+                                } else {
+                                    // Successfully sent the message
+                                    iter_pi->send_status = MSG_DONE;
+                                }
                             }
                         }
                     }
-                    break; // assume only one Pi; at least, use only the first
                 }
             }
             break;
         }
     }
-    return true;
+
+    // Remove any connections that produced errors
+    if (!clean_connections(netinfo)) {
+        return false;
+    }
+
+    return no_errors;
 }
 
 /* Close all connections in network, updating netinfo to reflect changes
  * Return true on success, false if error */
-bool shutdown_network(Network_info &netinfo) {
+bool shutdown_network(Network_info &netinfo)
+{
     bool no_errors = true;
     for (std::vector<Connection>::iterator iter = netinfo.connections.begin();
             iter != netinfo.connections.end(); ) {

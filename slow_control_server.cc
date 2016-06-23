@@ -25,10 +25,8 @@ int main(void)
     }
 
     // Update network
-    for (int i = 0; i < 10; i++) {
-        if (!(update_network(netinfo))) {
-            return 1;
-        }
+    while (true) {
+        update_network(netinfo);
     }
     
     // Shut down network

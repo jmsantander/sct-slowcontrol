@@ -36,19 +36,21 @@ int main(int argc, char *argv[])
     // send updated settings
     std::cout << "communicating with the server...\n";
     std::string message;
-    srand(12345); // Initialize random seed
-    for (int i = 0; i < 10; i++) {
-        std::cout << "Iteration " << i << std::endl;
-        // Set settings to random numbers
-        backplane.set_desired_voltage(rand() % 10);
-        backplane.set_desired_current(rand() % 10);
+    float i = 0.0;
+    while (true) {
+        // Set settings to some numbers
+        backplane.set_desired_voltage(i);
+        backplane.set_desired_current(i*-1);
+        i = i + 0.01;
         if (!backplane.SerializeToString(&message))
             return 1;
-        if (!update_network(netinfo, message))
+        // Send and receive messages
+        if (update_network(netinfo, message)) {
+            if (!backplane.ParseFromString(netinfo.connections[0].message))
+                return 1;
+        } else if (!backplane.ParseFromString(message)) {
             return 1;
-        sleep(1);
-        if (!backplane.ParseFromString(message))
-            return 1;
+        }
         // Display updated values
         std::cout << "updated voltage is: " << backplane.voltage() 
             << std::endl;

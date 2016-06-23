@@ -11,16 +11,25 @@
 #define SERVER 1
 #define GUI 2
 
+// Status codes for sending and receiving messages
+#define MSG_STANDBY 0
+#define MSG_READY 1
+#define MSG_DONE 2
+#define MSG_ERROR 3
+#define MSG_CLOSED 4
+
 // Holds info for a single connection, including the incoming message
 struct Connection {
     int socket;
     int device;
     std::string message;
-    bool unread_message;
+    int recv_status;
+    int send_status;
     Connection(int init_socket, int init_device) {
         socket = init_socket;
         device = init_device;
-        unread_message = false;
+        recv_status = MSG_STANDBY;
+        send_status = MSG_STANDBY;
     }
 };
 
@@ -51,7 +60,7 @@ bool setup_network(Network_info &netinfo, int device);
  * Return true and set incoming_message to empty string if timed out
  * Return false if error or connection closed */
 bool update_network(Network_info &netinfo, std::string outgoing_message="",
-        int timeout=100);
+        int timeout=200);
 
 /* Close all connections in network, updating netinfo to reflect changes
  * Return true on success, false if error */
