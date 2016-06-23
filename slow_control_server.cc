@@ -5,17 +5,9 @@
 #include <string>
 
 #include "sc_network.h"
-#include "sc_protobuf.pb.h"
 
 int main(void)
 {
-    // Verify that the version of the library we linked against is compatible
-    // with the version of the headers we compiled against
-    GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-    // Set up protocol buffer
-    slow_control::Backplane backplane;
-    
     // Set up networking info
     Network_info netinfo;
     
@@ -34,6 +26,5 @@ int main(void)
         return 1;
     }
 
-    
     return 0;
 }
