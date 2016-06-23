@@ -23,11 +23,7 @@ int main(int argc, char *argv[])
     Backplane backplane;
     
     // Set up networking info
-    Network_info netinfo(hostname);
-
-    // Connect to the server
-    if (!setup_network(netinfo, PI))
-        return 1;
+    Network_info netinfo(PI, hostname);
 
     // Communicate with the server: on each loop send updated data and 
     // recieve updated settings

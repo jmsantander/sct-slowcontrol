@@ -9,13 +9,8 @@
 int main(void)
 {
     // Set up networking info
-    Network_info netinfo;
+    Network_info netinfo(SERVER);
     
-    // Connect to the Pi and GUI
-    if (!(setup_network(netinfo, SERVER))) {
-        return 1;
-    }
-
     // Update network
     while (true) {
         update_network(netinfo);

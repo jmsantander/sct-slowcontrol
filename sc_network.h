@@ -34,12 +34,14 @@ struct Connection {
 };
 
 // Holds networking information 
+// Specify device as PI, SERVER, or GUI
 struct Network_info {
     std::vector<Connection> connections;
     int device;
     std::string host_name; // host of server
     Network_info() {};
-    Network_info(std::string init_host_name) {
+    Network_info(int init_device, std::string init_host_name="") {
+        device = init_device;
         host_name = init_host_name;
     }
 };
