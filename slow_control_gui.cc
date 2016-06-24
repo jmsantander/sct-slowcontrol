@@ -3,8 +3,6 @@
 
 #include <iostream>
 #include <string>
-#include <unistd.h>
-#include <cstdlib>
 
 #include "sc_network.h"
 #include "sc_backplane.h"
@@ -28,11 +26,9 @@ int main(int argc, char *argv[])
     // send updated settings
     std::cout << "communicating with the server...\n";
     std::string message;
-    float i = 0.0;
     while (true) {
-        // Set settings to some numbers
-        backplane.update_settings(i, -1*i);
-        i = i + 0.01;
+        // Send and receive messages
+        backplane.update_settings(2, -2);
         // Send and receive messages
         backplane.update_from_network(netinfo);
         // Display updated values

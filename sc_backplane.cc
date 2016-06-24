@@ -18,6 +18,8 @@ Backplane::Backplane()
     current_ = 0.0;
     desired_voltage_ = 0.0;
     desired_current_ = 0.0;
+
+    updates_to_send = false;
 }
 
 void Backplane::print_info()
@@ -37,6 +39,8 @@ void Backplane::update_data(float voltage, float current)
     
     data_buffer.set_voltage(voltage_);
     data_buffer.set_current(current_);
+
+    updates_to_send = true;
 }
 
 void Backplane::update_settings(float desired_voltage,
@@ -47,6 +51,8 @@ void Backplane::update_settings(float desired_voltage,
 
     settings_buffer.set_desired_voltage(desired_voltage_);
     settings_buffer.set_desired_current(desired_current_);
+
+    updates_to_send = true;
 }
     
 bool Backplane::update_from_network(Network_info &netinfo)
@@ -55,10 +61,17 @@ bool Backplane::update_from_network(Network_info &netinfo)
         case PI:
         {
             // Send data to and receive settings from server
-            std::string data_message;
-            data_buffer.SerializeToString(&data_message);
-            if (!update_network(netinfo, data_message)) {
-                return false;
+            if (updates_to_send) {
+                std::string data_message;
+                data_buffer.SerializeToString(&data_message);
+                if (!update_network(netinfo, data_message)) {
+                    return false;
+                }
+                updates_to_send = false;
+            } else {
+                if (!update_network(netinfo)) {
+                    return false;
+                }
             }
             // Store received settings
             std::vector<Connection>::iterator iter;
@@ -66,6 +79,7 @@ bool Backplane::update_from_network(Network_info &netinfo)
                     iter != netinfo.connections.end(); ++iter) {
                 if ((iter->device == SERVER) &&
                         (iter->recv_status == MSG_DONE)) {
+                    iter->recv_status = MSG_STANDBY;
                     if (!settings_buffer.ParseFromString(iter->message)) {
                         return false;
                     }
@@ -85,10 +99,17 @@ bool Backplane::update_from_network(Network_info &netinfo)
         case GUI:
         {
             // Send settings to and receive data from server
-            std::string settings_message;
-            settings_buffer.SerializeToString(&settings_message);
-            if (!update_network(netinfo, settings_message)) {
-                return false;
+            if (updates_to_send) {
+                std::string settings_message;
+                settings_buffer.SerializeToString(&settings_message);
+                if (!update_network(netinfo, settings_message)) {
+                    return false;
+                }
+                updates_to_send = false;
+            } else {
+                if (!update_network(netinfo)) {
+                    return false;
+                }
             }
             // Store received data
             std::vector<Connection>::iterator iter;
@@ -96,6 +117,7 @@ bool Backplane::update_from_network(Network_info &netinfo)
                     iter != netinfo.connections.end(); ++iter) {
                 if ((iter->device == SERVER) &&
                         (iter->recv_status == MSG_DONE)) {
+                    iter->recv_status = MSG_STANDBY;
                     if (!data_buffer.ParseFromString(iter->message)) {
                         return false;
                     }
@@ -111,4 +133,9 @@ bool Backplane::update_from_network(Network_info &netinfo)
         }
     }
     return true;
+}
+    
+void Backplane::apply_settings()
+{
+    update_data(desired_voltage_, desired_current_);
 }

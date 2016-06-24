@@ -16,6 +16,7 @@ private:
     float desired_current_;
     slow_control::Backplane_data data_buffer;
     slow_control::Backplane_settings settings_buffer;
+    bool updates_to_send;
 public:
     Backplane();
 
@@ -25,6 +26,8 @@ public:
     void update_settings(float desired_voltage, float desired_current);
 
     bool update_from_network(Network_info &netinfo);
+
+    void apply_settings();
 
     float voltage() { return voltage_; }
     float current() { return current_; }

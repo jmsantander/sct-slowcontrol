@@ -4,8 +4,6 @@
 
 #include <iostream>
 #include <string>
-#include <unistd.h>
-#include <cstdlib>
 
 #include "sc_network.h"
 #include "sc_backplane.h"
@@ -14,7 +12,7 @@ int main(int argc, char *argv[])
 {
     // Parse command line arguments
     if (argc != 2) {
-        fprintf(stderr, "usage: slow_control_pi hostname\n");
+        std::cerr << "usage: slow_control_pi hostname" << std::endl;
         return 1;
     }
     std::string hostname = argv[1];
@@ -28,13 +26,13 @@ int main(int argc, char *argv[])
     // Communicate with the server: on each loop send updated data and 
     // recieve updated settings
     std::cout << "communicating with the server...\n";
-    float i = 0.0;
+    // Set data to some numbers
+    backplane.update_data(1, -1);
     while (true) {
-        // Set data to some numbers
-        backplane.update_data(i, -1*i);
-        i = i + 0.01;
         // Send and receive messages
         backplane.update_from_network(netinfo);
+        // Apply new settings
+        backplane.apply_settings();
         // Display updated values
         backplane.print_info();
     }
