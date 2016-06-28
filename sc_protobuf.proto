@@ -1,8 +1,11 @@
 package slow_control;
 
-message Backplane {
+message Backplane_data {
     optional float voltage = 1;
     optional float current = 2;
-    optional float desired_voltage = 3;
-    optional float desired_current = 4;
+}
+
+message Backplane_settings {
+    optional float desired_voltage = 1;
+    optional float desired_current = 2;
 }
