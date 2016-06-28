@@ -38,62 +38,57 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-/* Open a new connection on the socket with file descriptor new_connection.
- * If hostname is not set, default is to open a server and wait for incoming
- * connections.
- * If hostname is set, will connect to that host.
+/* Close the socket with file descriptor sockfd.
  * Return true on success, false on failure. */
-bool open_connection(int &new_connection, const char *port,
-        const char *hostname=NULL)
+bool close_socket(int &sockfd)
 {
-    int connection; // listen on connection
-    struct addrinfo hints, *servinfo, *p;
-    int yes = 1;
+    if (close(sockfd) == -1) {
+        return false;
+    }
+    sockfd = INVALID_SOCKET;
+
+    return true;
+}
+
+/* Open a socket with file descriptor sockfd usable for listening for
+ * incoming connections on the specified port.
+ * Return true on success, false on failure */
+bool listen_socket(int &sockfd, std::string port)
+{
     int rv;
-    struct sockaddr_storage their_addr; // connector's address information
-    socklen_t sin_size;
-
-    int is_server = 1; // default: server if remote host not specified
-    if (hostname != NULL)
-        is_server = 0; // client
-
+    struct addrinfo hints, *servinfo, *p;
+    int yes = 1; // for setsockopt()
+    
+    // Get address info using the settings specified in hints
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    if (is_server)
-        hints.ai_flags = AI_PASSIVE; // use my IP
+    hints.ai_flags = AI_PASSIVE; // use my IP
     
-    if ((rv = getaddrinfo(hostname, port, &hints, &servinfo)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    if ((rv = getaddrinfo(NULL, port.c_str(), &hints, &servinfo)) != 0) {
+        std::cerr << "getaddrinfo: " << gai_strerror(rv) << std::endl;
         return false;
     }
     
-    // loop through all the results and bind to the first we can
+    // Loop through all the results and bind to the first we can
     for (p = servinfo; p != NULL; p = p->ai_next) {
-        if ((connection = socket(p->ai_family, p->ai_socktype,
-                        p->ai_protocol)) == -1) {
+        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+                        p->ai_protocol)) == INVALID_SOCKET) {
             perror("socket");
             continue;
         }
 
-        if (is_server) {
-            if (setsockopt(connection, SOL_SOCKET, SO_REUSEADDR, &yes,
-                        sizeof(int)) == -1) {
-                perror("setsockopt");
-                return false;
-            }
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
+                    sizeof(int)) == -1) {
+            perror("setsockopt");
+            sockfd = INVALID_SOCKET;
+            return false;
+        }
 
-            if (bind(connection, p->ai_addr, p->ai_addrlen) == -1) {
-                close(connection);
-                perror("bind");
-                continue;
-            }
-        } else { // is client
-            if (connect(connection, p->ai_addr, p->ai_addrlen) == -1) {
-                close(connection);
-                perror("connect");
-                continue;
-            }
+        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            perror("bind");
+            continue;
         }
 
         break;
@@ -102,49 +97,111 @@ bool open_connection(int &new_connection, const char *port,
     freeaddrinfo(servinfo); // all done with this structure
     
     if (p == NULL) {
-        if (is_server)
-            fprintf(stderr, "failed to bind\n");
-        else
-            fprintf(stderr, "failed to connect\n");
+        std::cerr << "failed to bind" << std::endl;
+        sockfd = INVALID_SOCKET;
+        return false;
+    }
+   
+    // Listen on the socket
+    if (listen(sockfd, BACKLOG) == -1) {
+        perror("listen");
+        close_socket(sockfd);
         return false;
     }
 
-    // If server, listen for an incoming connection and accept a new socket
-    // from it (then close the first)
-    // If client, we're good - just use the socket we have
-    if (is_server) {
-        if (listen(connection, BACKLOG) == -1) {
-            perror("listen");
-            return false;
-        }
-
-        sin_size = sizeof their_addr;
-        while(1) {
-            if ((new_connection = accept(connection,
-                            (struct sockaddr *)&their_addr,
-                            &sin_size)) == -1) {
-                perror("accept");
-                continue;
-            } else {
-                break;
-            }
-        }
-        close(connection);
-    } else { // is client
-        new_connection = connection;
-    }
-    
     return true;
 }
 
-/* Close the connection on socket with file descriptor connection.
- * Return true on success, false on failure. */
-bool close_connection(int connection)
-{
-    if (close(connection) == -1)
+/* Open a socket with file descriptor sockfd connected to the specified remote
+ * host on the specified port.
+ * Return true on success, false on failure */
+bool connect_socket(int &sockfd, std::string port, std::string host_name)
+{   
+    int rv;
+    struct addrinfo hints, *servinfo, *p;
+
+    // Get address info using the settings specified in hints
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((rv = getaddrinfo(host_name.c_str(), port.c_str(), &hints,
+                    &servinfo)) != 0) {
+        std::cerr << "getaddrinfo: " << gai_strerror(rv) << std::endl;
         return false;
+    }
+
+    // Loop through all the results and connect to the first we can
+    for (p = servinfo; p != NULL; p = p->ai_next) {
+        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+                        p->ai_protocol)) == INVALID_SOCKET) {
+            perror("socket");
+            continue;
+        }
+
+        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            perror("connect");
+            continue;
+        }
+
+        break;
+    }
+    
+    freeaddrinfo(servinfo); // all done with this structure
+    
+    if (p == NULL) {
+        std::cerr << "failed to connect" << std::endl;
+        sockfd = INVALID_SOCKET;
+        return false;
+    }
 
     return true;
+}
+
+/* Open a socket with file descriptor sockfd connected to the first incoming
+ * connection on the specified listener within the specified timeout in ms.
+ * Return true on success, false on error or timeout */
+bool accept_socket(int &sockfd, int &listener, std::string port,
+        int timeout=100)
+{
+    // Confirm that listener is valid
+    if (listener == INVALID_SOCKET) {
+        if (!listen_socket(listener, port)) {
+            return false;
+        }
+    }
+
+    // Check if any remote connections
+    int rv;
+    struct pollfd ufds[1];
+    ufds[0].fd = listener;
+    ufds[0].events = POLLIN;
+    
+    rv = poll(ufds, 1, timeout);
+
+    // Accept incoming connection or handle error
+    if (rv == -1) { // error with poll
+        perror("poll");
+        return false;
+    } else if (rv == 0) { // timeout
+        return false;
+    } else if (ufds[0].revents & POLLIN) { // incoming connection ready!
+        struct sockaddr_storage their_addr; // connector's address information
+        socklen_t sin_size = sizeof their_addr;
+        if ((sockfd = accept(listener, (struct sockaddr *)&their_addr,
+                        &sin_size)) == INVALID_SOCKET) {
+            perror("accept");
+            return false;
+        }
+        return true;
+    } else if ((ufds[0].revents & POLLERR) || (ufds[0].revents & POLLNVAL)) {
+        // error with listener
+        close_socket(listener);
+        return false;
+    } else { // unanticipated condition
+        return false;
+    }
 }
 
 /* Send a message to socket with file descriptor connection.
@@ -239,7 +296,7 @@ bool clean_connections(Network_info &netinfo)
             continue;
         } else if ((iter->recv_status == MSG_ERROR) ||
                 (iter->send_status == MSG_ERROR)) {
-            if (!close_connection(iter->socket)) {
+            if (!close_socket(iter->socket)) {
                 no_errors = false;
             }
             iter = netinfo.connections.erase(iter);
@@ -299,70 +356,98 @@ bool poll_connections(Network_info &netinfo, int timeout)
     return true;
 }
 
+/* Add a connection of the specified device to netinfo
+ * Return true if connection added, false if not */
+bool add_connection(Network_info &netinfo, int device)
+{
+    int sockfd = INVALID_SOCKET;
+    std::string port;
+
+    switch(netinfo.device) {
+        case PI:
+        {
+            port = PI_PORT;
+            if (!connect_socket(sockfd, port, netinfo.host_name)) {
+                return false;
+            }
+            break;
+        }
+        case SERVER:
+        {
+            // Accept connection from appropriate device
+            if (device == PI) {
+                port = PI_PORT;
+                if (!accept_socket(sockfd, netinfo.pi_listener, port)) {
+                    return false;
+                }
+            } else if (device == GUI) {
+                port = GUI_PORT;
+                if (!accept_socket(sockfd, netinfo.gui_listener, port)) {
+                    return false;
+                }
+            } else {
+                std::cout << "Error: server must connect to Pi or GUI"
+                    << std::endl;
+                return false;
+            }
+            break;
+        }
+        case GUI:
+        {
+            port = GUI_PORT;
+            if (!connect_socket(sockfd, port, netinfo.host_name)) {
+                return false;
+            }
+            break;
+        }
+    }
+        
+    netinfo.connections.push_back(Connection(sockfd, device));
+
+    return true;
+}
+
 /* Set up network and update netinfo, as needed for specified device 
  * Specify device as PI, SERVER, or GUI
  * Return true if setup successful, false if error */ 
 bool setup_network(Network_info &netinfo, int device)
 {
     switch (device) {
-        // Pi: connect to an open port on the server
+        // Pi and GUI: connect to an open port on the server
         case PI:
+        case GUI:
         {
             // Connect to a server if not already connected
             if (count_connections(netinfo, SERVER) == 0) {
-                std::cout << "connecting to the server..." << std::endl;
-                int server = -1;
-                if (!open_connection(server, PI_PORT,
-                            netinfo.host_name.c_str())) {
-                    std::cout << "failed to connect to server." << std::endl;
+                if (!add_connection(netinfo, SERVER)) {
                     return false;
                 }
                 std::cout << "connected to the server!" << std::endl;
-                netinfo.connections.push_back(Connection(server, SERVER));
             }
             break;
         }
         // Server: wait for incoming connections from Pi and GUIs
         case SERVER:
         {
+            bool could_not_connect = false; // must connect to both Pi and GUI
             // Connect to a Pi if not already connected
             if (count_connections(netinfo, PI) == 0) {
-                std::cout << "connecting to the Pi..." << std::endl;
-                int pi = -1; 
-                if (!open_connection(pi, PI_PORT)) {
-                    std::cout << "failed to connect to Pi." << std::endl;
-                    return false;
+                if (!add_connection(netinfo, PI)) {
+                    could_not_connect = true;
+                } else {
+                    std::cout << "connected to the Pi!" << std::endl;
                 }
-                std::cout << "connected to the Pi!" << std::endl;
-                netinfo.connections.push_back(Connection(pi, PI));
             }
             // Connect to a GUI if not already connected
             if (count_connections(netinfo, GUI) == 0) {
-                std::cout << "connecting to the GUI..." << std::endl;
-                int gui = -1; 
-                if (!open_connection(gui, GUI_PORT)) {
-                    std::cout << "failed to connect to GUI." << std::endl;
-                    return false;
+                if (!add_connection(netinfo, GUI)) {
+                    could_not_connect = true;
+                } else {
+                    std::cout << "connected to the GUI!" << std::endl;
                 }
-                std::cout << "connected to the GUI!" << std::endl;
-                netinfo.connections.push_back(Connection(gui, GUI));
             }
-            break;
-        }
-        // GUI: connect to an open port on the server
-        case GUI:
-        {
-            // Connect to a server if not already connected
-            if (count_connections(netinfo, SERVER) == 0) {
-                std::cout << "connecting to the server..." << std::endl;
-                int server = -1;
-                if (!open_connection(server, GUI_PORT,
-                            netinfo.host_name.c_str())) {
-                    std::cout << "failed to connect to server." << std::endl;
-                    return false;
-                }
-                std::cout << "connected to the server!" << std::endl;
-                netinfo.connections.push_back(Connection(server, SERVER));
+            if (could_not_connect) {
+                return false;
             }
             break;
         }
@@ -504,18 +589,31 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
     return no_errors;
 }
 
-/* Close all connections in network, updating netinfo to reflect changes
+/* Close all connections and listeners in network, updating netinfo to reflect
+ * changes
  * Return true on success, false if error */
 bool shutdown_network(Network_info &netinfo)
 {
     bool no_errors = true;
+    // Close connections
     for (std::vector<Connection>::iterator iter = netinfo.connections.begin();
             iter != netinfo.connections.end(); ) {
-        if (close_connection(iter->socket)) {
+        if (close_socket(iter->socket)) {
             iter = netinfo.connections.erase(iter);
         } else {
             no_errors = false;
             ++iter;
+        }
+    }
+    // Close listeners if any
+    if (netinfo.pi_listener != INVALID_SOCKET) {
+        if (!close_socket(netinfo.pi_listener)) {
+            no_errors = false;
+        }
+    }
+    if (netinfo.gui_listener != INVALID_SOCKET) {
+        if (!close_socket(netinfo.gui_listener)) {
+            no_errors = false;
         }
     }
     return no_errors;

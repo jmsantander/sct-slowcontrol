@@ -18,6 +18,8 @@
 #define MSG_ERROR 3
 #define MSG_CLOSED 4
 
+#define INVALID_SOCKET -1
+
 // Holds info for a single connection, including the incoming message
 struct Connection {
     int socket;
@@ -39,10 +41,13 @@ struct Network_info {
     std::vector<Connection> connections;
     int device;
     std::string host_name; // host of server
+    int pi_listener, gui_listener; // for server only to receive connections
     Network_info() {};
     Network_info(int init_device, std::string init_host_name="") {
         device = init_device;
         host_name = init_host_name;
+        pi_listener = INVALID_SOCKET;
+        gui_listener = INVALID_SOCKET;
     }
 };
 
@@ -55,14 +60,14 @@ bool setup_network(Network_info &netinfo, int device);
  * with any received messages and by removing any closed connections
  *
  * If outgoing message is empty string, will not send anything
- * Specify timeout as time to wait for remote response in ms, default 0.1s
+ * Specify timeout as time to wait for remote response in ms, default 0.5s
  * If timeout is set to be negative, will wait forever
  *
  * Return true if incoming message read [and outgoing message sent]
  * Return true and set incoming_message to empty string if timed out
  * Return false if error or connection closed */
 bool update_network(Network_info &netinfo, std::string outgoing_message="",
-        int timeout=200);
+        int timeout=500);
 
 /* Close all connections in network, updating netinfo to reflect changes
  * Return true on success, false if error */
