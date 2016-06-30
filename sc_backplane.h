@@ -25,7 +25,7 @@ public:
     void update_data(float voltage, float current);
     void update_settings(float desired_voltage, float desired_current);
 
-    bool update_from_network(Network_info &netinfo);
+    bool synchronize_network(Network_info &netinfo);
 
     void apply_settings();
 

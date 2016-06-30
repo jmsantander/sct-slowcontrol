@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     int i = 0, j = 0;
     while (true) {
         // Send and receive messages
-        backplane.update_from_network(netinfo);
+        backplane.synchronize_network(netinfo);
         if (i % 200 == 0) {
             // Send and receive messages
             backplane.update_settings(i, j);

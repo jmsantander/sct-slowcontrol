@@ -55,7 +55,7 @@ void Backplane::update_settings(float desired_voltage,
     updates_to_send = true;
 }
     
-bool Backplane::update_from_network(Network_info &netinfo)
+bool Backplane::synchronize_network(Network_info &netinfo)
 {
     switch (netinfo.device) {
         case PI:
