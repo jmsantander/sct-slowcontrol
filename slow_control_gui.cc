@@ -7,6 +7,7 @@
 
 #include "sc_network.h"
 #include "sc_backplane.h"
+#include "sc_logistics.h"
 
 int main(int argc, char *argv[])
 {
@@ -26,22 +27,19 @@ int main(int argc, char *argv[])
     // Communicate with the server: on each loop receive updated data and 
     // send updated settings
     std::cout << "communicating with the server...\n";
-    int i = 0, j = 0;
+    // Send and receive messages
+    backplane.synchronize_network(netinfo);
+    std::string command, value;
+    int i = 0;
     while (true) {
+        // Read in a command from the user
+        read_command(command, value);
+        backplane.update_settings(i, atoi(value.c_str()));
+        i++;
         // Send and receive messages
         backplane.synchronize_network(netinfo);
-        if (i % 200 == 0) {
-            // Send and receive messages
-            backplane.update_settings(i, j);
-            // Display updated values
-            backplane.print_info();
-            usleep(2000);
-        }
-        if (i >= 10000) {
-            i = 0;
-            j++;
-        }
-        i++;
+        // Display updated values
+        backplane.print_info();
     }
 
     // Shut down network
