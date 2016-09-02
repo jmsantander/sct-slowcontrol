@@ -292,6 +292,7 @@ bool clean_connections(Network_info &netinfo)
             iter != netinfo.connections.end(); ) {
         if ((iter->recv_status == MSG_CLOSED) ||
                 (iter->send_status == MSG_CLOSED)) {
+            std::cout << "Disconnected." << std::endl;
             iter = netinfo.connections.erase(iter);
             continue;
         } else if ((iter->recv_status == MSG_ERROR) ||
@@ -299,6 +300,7 @@ bool clean_connections(Network_info &netinfo)
             if (!close_socket(iter->socket)) {
                 no_errors = false;
             }
+            std::cout << "Disconnected." << std::endl;
             iter = netinfo.connections.erase(iter);
             continue;
         } else {
