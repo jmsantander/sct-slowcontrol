@@ -34,6 +34,14 @@ int main(int argc, char *argv[])
     while (true) {
         // Read in a command from the user
         read_command(command, value);
+        // Execute the command
+        if (command.compare("exit") == 0) {
+            // Exit the GUI
+            // Shut down network
+            if (!shutdown_network(netinfo))
+                return 1;
+            break;
+        }
         backplane.update_settings(i, atoi(value.c_str()));
         i++;
         // Send and receive messages
@@ -41,10 +49,6 @@ int main(int argc, char *argv[])
         // Display updated values
         backplane.print_info();
     }
-
-    // Shut down network
-    if (!shutdown_network(netinfo))
-        return 1;
 
     return 0;
 }
