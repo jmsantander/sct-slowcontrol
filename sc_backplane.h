@@ -33,6 +33,11 @@ public:
 
     void print_data();
 
+    // Initialize backplane for low level communication
+    // Needed for Pi only - at a later point this will be better served using
+    // class inheritance
+    bool pi_initialize_lowlevel();
+
     float requested_updates() { return requested_updates_; }
 };
 

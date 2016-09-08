@@ -18,8 +18,13 @@ int main(int argc, char *argv[])
     }
     std::string hostname = argv[1];
 
-    // Make a Backplane object
+    // Make a Backplane object and initialize for low level communication
     Backplane backplane;
+    if (!backplane.pi_initialize_lowlevel()) {
+        std::cerr << "error: could not initialize low level backplane" 
+            << std::endl;
+        return 1;
+    }
     
     // Set up networking info
     Network_info netinfo(PI, hostname);
@@ -40,7 +45,6 @@ int main(int argc, char *argv[])
         // Display data
         backplane.print_data();
         std::cout << backplane.requested_updates() << std::endl;
-        //usleep(20000);
     }
 
     // Shut down network
