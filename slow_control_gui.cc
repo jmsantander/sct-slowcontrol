@@ -30,7 +30,6 @@ int main(int argc, char *argv[])
     // Send and receive messages
     backplane.synchronize_network(netinfo);
     std::string command, value;
-    int i = 0;
     while (true) {
         // Read in a command from the user
         read_command(command, value);
@@ -38,16 +37,22 @@ int main(int argc, char *argv[])
         if (command.compare("exit") == 0) {
             // Exit the GUI
             // Shut down network
+            std::cout << "Exit." << std::endl;
             if (!shutdown_network(netinfo))
                 return 1;
             break;
+        } else if (command.compare("v") == 0) {
+            // Read FEE housekeeping voltages
+            std::cout << "Read voltages." << std::endl;
+            backplane.update_settings(BP_VOLTAGES);
+        } else {
+            std::cout << "Command not recognized." << std::endl;
+            continue;
         }
-        backplane.update_settings(i, atoi(value.c_str()));
-        i++;
         // Send and receive messages
         backplane.synchronize_network(netinfo);
         // Display updated values
-        backplane.print_info();
+        backplane.print_data();
     }
 
     return 0;

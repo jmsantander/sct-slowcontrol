@@ -27,24 +27,20 @@ int main(int argc, char *argv[])
     // Communicate with the server: on each loop send updated data and 
     // recieve updated settings
     std::cout << "communicating with the server...\n";
-    int i = 0, j = 0;
+    // Send and receive messages
+    backplane.synchronize_network(netinfo);
     while (true) {
+        std::cout << backplane.requested_updates() << std::endl;
+        // Apply new settings
+        backplane.apply_settings();
+        std::cout << backplane.requested_updates() << std::endl;
         // Send and receive messages
         backplane.synchronize_network(netinfo);
-        if (i % 200 == 0) {
-            // Set data to some numbers
-            backplane.update_data(i, j);
-            // Apply new settings
-            //backplane.apply_settings();
-            // Display updated values
-            backplane.print_info();
-            usleep(2000);
-        }
-        if (i >= 10000) {
-            i = 0;
-            j++;
-        }
-        i++;
+        std::cout << backplane.requested_updates() << std::endl;
+        // Display data
+        backplane.print_data();
+        std::cout << backplane.requested_updates() << std::endl;
+        //usleep(20000);
     }
 
     // Shut down network

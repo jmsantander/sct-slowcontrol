@@ -14,43 +14,35 @@ Backplane::Backplane()
     // is compatible with the version of the headers we compiled against.
     GOOGLE_PROTOBUF_VERIFY_VERSION;
     
-    voltage_ = 0.0;
-    current_ = 0.0;
-    desired_voltage_ = 0.0;
-    desired_current_ = 0.0;
+    for (int i = 0; i < N_FEES; i++) {
+        voltages_[i] = 0.0;
+        data_buffer.add_voltage(0.0);
+    }
 
     updates_to_send = false;
 }
 
-void Backplane::print_info()
+void Backplane::update_data(int requested_updates)
 {
-    std::cout << "updated voltage is: " << voltage_ << std::endl;
-    std::cout << "updated current is: " << current_ << std::endl;
-    std::cout << "updated desired voltage is: " << desired_voltage_
-        << std::endl;
-    std::cout << "updated desired current is: " << desired_current_
-        << std::endl;
-}
-
-void Backplane::update_data(float voltage, float current)
-{
-    voltage_ = voltage;
-    current_ = current;
+    if (requested_updates == BP_NONE) {
+        return;
+    } else if (requested_updates == BP_VOLTAGES) {
+        // TODO: Implement low level functionality!!!
+        //read_voltages(voltages_);
+        // FOR TESTING ONLY
+        for (int i = 0; i < N_FEES; i++) {
+            voltages_[i] += 1;
+            data_buffer.set_voltage(i, voltages_[i]);
+        }
+    }
     
-    data_buffer.set_voltage(voltage_);
-    data_buffer.set_current(current_);
-
     updates_to_send = true;
 }
 
-void Backplane::update_settings(float desired_voltage,
-        float desired_current)
+void Backplane::update_settings(int requested_updates)
 {
-    desired_voltage_ = desired_voltage;
-    desired_current_ = desired_current;
-
-    settings_buffer.set_desired_voltage(desired_voltage_);
-    settings_buffer.set_desired_current(desired_current_);
+    requested_updates_ = requested_updates;
+    settings_buffer.set_requested_updates(requested_updates_);
 
     updates_to_send = true;
 }
@@ -83,8 +75,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     if (!settings_buffer.ParseFromString(iter->message)) {
                         return false;
                     }
-                    desired_voltage_ = settings_buffer.desired_voltage();
-                    desired_current_ = settings_buffer.desired_current();
+                    requested_updates_ = settings_buffer.requested_updates();
                 }
             }
             break;
@@ -106,6 +97,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     return false;
                 }
                 updates_to_send = false;
+                requested_updates_ = BP_NONE;
             } else {
                 if (!update_network(netinfo)) {
                     return false;
@@ -121,8 +113,9 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     if (!data_buffer.ParseFromString(iter->message)) {
                         return false;
                     }
-                    voltage_ = data_buffer.voltage();
-                    current_ = data_buffer.current();
+                    for (int i = 0; i < N_FEES; i++) {
+                        voltages_[i] = data_buffer.voltage(i);
+                    }
                 }
             }
             break;
@@ -137,5 +130,14 @@ bool Backplane::synchronize_network(Network_info &netinfo)
     
 void Backplane::apply_settings()
 {
-    update_data(desired_voltage_, desired_current_);
+    update_data(requested_updates_);
+    requested_updates_ = BP_NONE;
+}
+
+void Backplane::print_data()
+{
+    std::cout << "Voltages:" << std::endl;
+    for (int i = 0; i < N_FEES; i++) {
+        std::cout << i << ": " << voltages_[i] << std::endl;
+    }
 }

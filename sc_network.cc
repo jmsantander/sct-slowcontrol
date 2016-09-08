@@ -335,6 +335,9 @@ bool poll_connections(Network_info &netinfo, int timeout)
 
     // Record the results of the poll in netinfo
     for (int i = 0; i < n_connections; i++) {
+        // Start with default values
+        netinfo.connections[i].recv_status = MSG_STANDBY;
+        netinfo.connections[i].send_status = MSG_STANDBY;
         if (ufds[i].revents & POLLIN) {
             netinfo.connections[i].recv_status = MSG_READY;
         }

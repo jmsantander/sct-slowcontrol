@@ -7,32 +7,33 @@
 #include "sc_protobuf.pb.h"
 #include "sc_network.h"
 
+#define N_FEES 32
+
+// Codes for updating data and settings
+#define BP_NONE 0
+#define BP_VOLTAGES 1
+
 class Backplane
 {
 private:
-    float voltage_;
-    float current_;
-    float desired_voltage_;
-    float desired_current_;
+    float voltages_[N_FEES];
+    int requested_updates_;
     slow_control::Backplane_data data_buffer;
     slow_control::Backplane_settings settings_buffer;
     bool updates_to_send;
 public:
     Backplane();
 
-    void print_info();
-
-    void update_data(float voltage, float current);
-    void update_settings(float desired_voltage, float desired_current);
+    void update_data(int requested_updates = BP_NONE);
+    void update_settings(int requested_updates = BP_NONE);
 
     bool synchronize_network(Network_info &netinfo);
 
     void apply_settings();
 
-    float voltage() { return voltage_; }
-    float current() { return current_; }
-    float desired_voltage() { return desired_voltage_; }
-    float desired_current() { return desired_current_; }
+    void print_data();
+
+    float requested_updates() { return requested_updates_; }
 };
 
 #endif
