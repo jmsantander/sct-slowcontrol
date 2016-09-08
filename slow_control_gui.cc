@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
         // Read in a command from the user
         read_command(command, value);
         // Execute the command
-        if (command.compare("exit") == 0) {
+        if (command.compare("e") == 0) {
             // Exit the GUI
             // Shut down network
             std::cout << "Exit." << std::endl;
