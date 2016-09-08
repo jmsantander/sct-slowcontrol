@@ -28,7 +28,7 @@ void Backplane::update_data(int requested_updates)
         return;
     } else if (requested_updates == BP_VOLTAGES) {
         // TODO: Implement low level functionality!!!
-        //read_voltages(voltages_);
+        //read_voltages(voltages_, N_FEES);
         // FOR TESTING ONLY
         for (int i = 0; i < N_FEES; i++) {
             voltages_[i] += 1;
