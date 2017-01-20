@@ -4,7 +4,7 @@
 // written by Phil Moore and Richard Bose. 
 
 #include <stdlib.h>
-#include <bcm2835.h> // Driver for SPI chip
+#include "bcm2835.h" // Driver for SPI chip
 
 /* Command Words */
 #define  SPI_WRAP_AROUND   	0x0000   /* cmd */
@@ -195,7 +195,7 @@ void tdelay(int msec){
 }
 
 // Read in and store FEE housekeeping voltages
-void read_voltages(float &voltages, const int n_fees)
+void read_voltages(float voltages[], const int n_fees)
 {
     unsigned short voltsarray[n_fees];
 	unsigned short data[11];
