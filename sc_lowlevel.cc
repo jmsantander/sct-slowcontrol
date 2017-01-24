@@ -4,6 +4,7 @@
 // written by Phil Moore and Richard Bose. 
 
 #include <stdlib.h>
+#include <ctime>
 #include "bcm2835.h" // Driver for SPI chip
 
 /* Command Words */
@@ -182,16 +183,26 @@ void trig_adcs()
 	delay(100);
 }
 
-// From BP SPI code. Keeping this for now since I don't know why the code was
-// written this way but there has to be a better way to implement a short 
-// delay. - Ari
-void tdelay(int msec){
-    int i;
-    long j;
-    for (i = 0; i < msec; i++){
-        for (j=0; j<532000; j++);
-    }
-    return;
+//// From BP SPI code. Keeping this for now since I don't know why the code was
+//// written this way but there has to be a better way to implement a short 
+//// delay. - Ari
+//void tdelay(int msec){
+//    int i;
+//    long j;
+//    for (i = 0; i < msec; i++){
+//        for (j=0; j<532000; j++);
+//    }
+//    return;
+//}
+
+// Implement a time delay in milliseconds
+void tdelay(int msec) {
+    struct timespec tim;
+    const long NSEC = 1000000 * msec; // convert millisec to nanosec
+    tim.tv_sec = 0;
+    tim.tv_nsec = NSEC;
+
+    nanosleep(&tim, NULL);
 }
 
 // Read in and store FEE housekeeping voltages
