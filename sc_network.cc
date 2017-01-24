@@ -21,8 +21,8 @@
 
 #include "sc_network.h"
 
-#define PI_PORT "3141" // the port Pi will connect to server on
-#define GUI_PORT "5926" // the port GUI will connect to server on
+#define PI_PORT "31415" // the port Pi will connect to server on
+#define GUI_PORT "51413" // the port GUI will connect to server on
 
 #define BACKLOG 10 // how many pending connections queue will hold
 #define HEADER_LENGTH 2 // length of network short
