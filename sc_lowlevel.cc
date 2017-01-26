@@ -4,8 +4,8 @@
 // written by Phil Moore and Richard Bose. 
 
 #include <stdlib.h>
-#include <ctime>
 #include "bcm2835.h" // Driver for SPI chip
+#include "sc_logistics.h"
 
 /* Command Words */
 #define  SPI_WRAP_AROUND   	0x0000   /* cmd */
@@ -197,12 +197,7 @@ void trig_adcs()
 
 // Implement a time delay in milliseconds
 void tdelay(int msec) {
-    struct timespec tim;
-    const long NSEC = 1000000 * msec; // convert millisec to nanosec
-    tim.tv_sec = 0;
-    tim.tv_nsec = NSEC;
-
-    nanosleep(&tim, NULL);
+    sleep_msec(msec);
 }
 
 // Read in and store FEE housekeeping voltages

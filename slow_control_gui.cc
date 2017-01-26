@@ -41,18 +41,26 @@ int main(int argc, char *argv[])
             if (!shutdown_network(netinfo))
                 return 1;
             break;
+        } else if (command.compare("u") == 0) {
+            // Update data
+            std::cout << "Get updates." << std::endl;
+            backplane.synchronize_network(netinfo);
+            // Display updated values
+            backplane.print_data();
         } else if (command.compare("v") == 0) {
             // Read FEE housekeeping voltages
             std::cout << "Read voltages." << std::endl;
             backplane.update_settings(BP_VOLTAGES);
+            // Send and receive messages
+            backplane.synchronize_network(netinfo);
+            sleep_msec(10);
+            backplane.synchronize_network(netinfo);
+            // Display updated values
+            backplane.print_data();
         } else {
             std::cout << "Command not recognized." << std::endl;
             continue;
         }
-        // Send and receive messages
-        backplane.synchronize_network(netinfo);
-        // Display updated values
-        backplane.print_data();
     }
 
     return 0;

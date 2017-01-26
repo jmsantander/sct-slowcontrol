@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <ctime>
 
 #include "sc_logistics.h"
 
@@ -40,4 +41,14 @@ bool read_command(std::string &command, std::string &value)
     }
 
     return true;
+}
+
+void sleep_msec(int msec)
+{
+    struct timespec tim;
+    const long NSEC = 1000000 * msec; // convert millisec to nanosec
+    tim.tv_sec = 0;
+    tim.tv_nsec = NSEC;
+
+    nanosleep(&tim, NULL);
 }
