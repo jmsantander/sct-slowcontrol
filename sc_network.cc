@@ -552,7 +552,7 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
                             iter_gui != netinfo.connections.end();
                             ++iter_gui) {
                         if (iter_gui->device == GUI) {
-                            // Send settings from Pi to GUI only if both ready
+                            // Send data from Pi to GUI only if both ready
                             if ((iter_pi->recv_status == MSG_DONE) &&
                                     (iter_gui->send_status == MSG_READY)) {
                                 // Attempt to send the message
@@ -565,7 +565,7 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
                                     iter_gui->send_status = MSG_DONE;
                                 }
                             }
-                            // Send data from GUI to Pi if both ready
+                            // Send settings from GUI to Pi only if both ready
                             if ((iter_gui->recv_status == MSG_DONE) &&
                                     (iter_pi->send_status == MSG_READY)) {
                                 // Attempt to send the message

@@ -35,16 +35,14 @@ int main(int argc, char *argv[])
     // Send and receive messages
     backplane.synchronize_network(netinfo);
     while (true) {
-        std::cout << backplane.requested_updates() << std::endl;
         // Apply new settings
         backplane.apply_settings();
-        std::cout << backplane.requested_updates() << std::endl;
         // Send and receive messages
         backplane.synchronize_network(netinfo);
-        std::cout << backplane.requested_updates() << std::endl;
         // Display data
-        backplane.print_data();
-        std::cout << backplane.requested_updates() << std::endl;
+        if (backplane.requsted_updates() != BP_NONE) {
+            backplane.print_data();
+        }
     }
 
     // Shut down network
