@@ -7,6 +7,7 @@
 #include "sc_backplane.h"
 #include "sc_network.h"
 #include "sc_lowlevel.h"
+#include "sc_logistics.h"
 #include "sc_protobuf.pb.h"
 
 Backplane::Backplane()
@@ -23,16 +24,16 @@ Backplane::Backplane()
     updates_to_send = false;
 }
 
-void Backplane::update_data(int requested_updates)
+void Backplane::update_data(int requested_updates, bool simulation_mode)
 {
     if (requested_updates == BP_NONE) {
         return;
     } else if (requested_updates == BP_VOLTAGES) {
-        read_voltages(voltages_, N_FEES);
-        //for (int i = 0; i < N_FEES; i++) {
-        //    voltages_[i] += 1;
-        //    data_buffer.set_voltage(i, voltages_[i]);
-        //}
+        if (!simulation_mode) {
+            read_voltages(voltages_, N_FEES);
+        } else {
+            simulate_voltages(voltages_, N_FEES);
+        }
     }
     
     updates_to_send = true;
@@ -112,6 +113,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     if (!data_buffer.ParseFromString(iter->message)) {
                         return false;
                     }
+                    std::cout << "Updating data...";
                     for (int i = 0; i < N_FEES; i++) {
                         voltages_[i] = data_buffer.voltage(i);
                     }
@@ -132,9 +134,9 @@ bool Backplane::pi_initialize_lowlevel()
     return initialize_lowlevel();
 }
     
-void Backplane::apply_settings()
+void Backplane::apply_settings(bool simulation_mode)
 {
-    update_data(requested_updates_);
+    update_data(requested_updates_, simulation_mode);
     requested_updates_ = BP_NONE;
 }
 
@@ -142,6 +144,7 @@ void Backplane::print_data()
 {
     std::cout << "Voltages:" << std::endl;
     for (int i = 0; i < N_FEES; i++) {
-        std::cout << i << ": " << voltages_[i] << std::endl;
+        std::cout << i << ": " << voltages_[i] << " ";
+        std::cout << std::endl;
     }
 }

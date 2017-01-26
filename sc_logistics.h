@@ -8,3 +8,6 @@ bool read_command(std::string &command, std::string &value);
 
 // Sleep for a given number of milliseconds
 void sleep_msec(int msec);
+
+// Simulate reading voltages, for testing without a real Pi
+void simulate_voltages(float voltages[], const int n_fees);

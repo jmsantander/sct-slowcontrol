@@ -24,12 +24,13 @@ private:
 public:
     Backplane();
 
-    void update_data(int requested_updates = BP_NONE);
+    void update_data(int requested_updates = BP_NONE,
+            bool simulation_mode = false);
     void update_settings(int requested_updates = BP_NONE);
 
     bool synchronize_network(Network_info &netinfo);
 
-    void apply_settings();
+    void apply_settings(bool simulation_mode);
 
     void print_data();
 

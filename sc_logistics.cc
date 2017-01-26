@@ -43,6 +43,7 @@ bool read_command(std::string &command, std::string &value)
     return true;
 }
 
+// Sleep for a given number of milliseconds
 void sleep_msec(int msec)
 {
     struct timespec tim;
@@ -51,4 +52,13 @@ void sleep_msec(int msec)
     tim.tv_nsec = NSEC;
 
     nanosleep(&tim, NULL);
+}
+
+// Simulate reading voltages, for testing without a real Pi
+void simulate_voltages(float voltages[], const int n_fees)
+{
+    sleep_msec(40);
+    for (int i = 0; i < n_fees; i++) {
+		voltages[i] = i;
+    }
 }

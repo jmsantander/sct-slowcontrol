@@ -20,10 +20,11 @@ int main(int argc, char *argv[])
 
     // Make a Backplane object and initialize for low level communication
     Backplane backplane;
+    bool simulation_mode = false;
     if (!backplane.pi_initialize_lowlevel()) {
-        std::cerr << "error: could not initialize low level backplane" 
-            << std::endl;
-        return 1;
+        std::cout << "warning: could not initialize low level backplane" 
+            << "- switching to simulation mode" << std::endl;
+        simulation_mode = true;
     }
     
     // Set up networking info
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
     backplane.synchronize_network(netinfo);
     while (true) {
         // Apply new settings
-        backplane.apply_settings();
+        backplane.apply_settings(simulation_mode);
         // Send and receive messages
         backplane.synchronize_network(netinfo);
         // Display data
