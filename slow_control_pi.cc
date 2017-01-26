@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
         // Send and receive messages
         backplane.synchronize_network(netinfo);
         // Display data
-        if (backplane.requsted_updates() != BP_NONE) {
+        if (backplane.requested_updates() != BP_NONE) {
             backplane.print_data();
         }
     }
