@@ -31,19 +31,13 @@ int main(int argc, char *argv[])
     Network_info netinfo(PI, hostname);
 
     // Communicate with the server: on each loop send updated data and 
-    // recieve updated settings
+    // receive updated settings
     std::cout << "communicating with the server...\n";
-    // Send and receive messages
-    backplane.synchronize_network(netinfo);
     while (true) {
-        // Apply new settings
-        backplane.apply_settings(simulation_mode);
         // Send and receive messages
         backplane.synchronize_network(netinfo);
-        // Display data
-        if (backplane.requested_updates() != BP_NONE) {
-            backplane.print_data();
-        }
+        // Apply new settings
+        backplane.apply_settings(simulation_mode);
     }
 
     // Shut down network

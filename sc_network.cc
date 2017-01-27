@@ -563,6 +563,7 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
                                 } else {
                                     // Successfully sent the message
                                     iter_gui->send_status = MSG_DONE;
+                                    std::cout << "Sent Pi->GUI\n"; //TESTING
                                 }
                             }
                             // Send settings from GUI to Pi only if both ready
@@ -576,6 +577,7 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
                                 } else {
                                     // Successfully sent the message
                                     iter_pi->send_status = MSG_DONE;
+                                    std::cout << "Sent GUI->Pi\n"; //TESTING
                                 }
                             }
                         }

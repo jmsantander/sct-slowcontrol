@@ -2,6 +2,7 @@
 // Implementation of classes for controlling and updating backplane info
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 
 #include "sc_backplane.h"
@@ -20,7 +21,8 @@ Backplane::Backplane()
         voltages_[i] = 0.0;
         data_buffer.add_voltage(0.0);
     }
-
+    
+    requested_updates_ = BP_NONE;
     updates_to_send = false;
 }
 
@@ -33,6 +35,9 @@ void Backplane::update_data(int requested_updates, bool simulation_mode)
             read_voltages(voltages_, N_FEES);
         } else {
             simulate_voltages(voltages_, N_FEES);
+        }
+        for (int i = 0; i < N_FEES; i++) {
+            data_buffer.set_voltage(i, voltages_[i]);
         }
     }
     
@@ -75,6 +80,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     if (!settings_buffer.ParseFromString(iter->message)) {
                         return false;
                     }
+                    std::cout << "Received settings.\n"; //TESTING
                     requested_updates_ = settings_buffer.requested_updates();
                 }
             }
@@ -113,7 +119,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     if (!data_buffer.ParseFromString(iter->message)) {
                         return false;
                     }
-                    std::cout << "Updating data...";
+                    std::cout << "Updating data..." << std::endl;
                     for (int i = 0; i < N_FEES; i++) {
                         voltages_[i] = data_buffer.voltage(i);
                     }
@@ -140,11 +146,31 @@ void Backplane::apply_settings(bool simulation_mode)
     requested_updates_ = BP_NONE;
 }
 
-void Backplane::print_data()
+void Backplane::print_data(int data_type)
 {
-    std::cout << "Voltages:" << std::endl;
-    for (int i = 0; i < N_FEES; i++) {
-        std::cout << i << ": " << voltages_[i] << " ";
-        std::cout << std::endl;
+    switch(data_type) {
+        case BP_NONE:
+            return;
+        case BP_VOLTAGES:
+        {
+            std::cout << std::endl << "FEE Voltages:" << std::endl;
+            std::cout << std::fixed << std::setprecision(2);
+            for (int i = 0; i < N_FEES; i++) {
+                if (i == 0 || i == 28) {
+                    std::cout << "      " << std::setw(5) << voltages_[i] 
+                        << " ";
+                } else if (i == 3 || i == 31) {
+                    std::cout << std::setw(5) << voltages_[i] << "      ";
+                } else {
+                    std::cout << std::setw(5) << voltages_[i] << " ";
+                }
+                if (i == 3 || i == 9 || i == 15 || i == 21 || i == 27 || 
+                        i == 31) {
+                    std::cout << std::endl;
+                }
+            }
+            std::cout << std::endl;
+            break;
+        }
     }
 }

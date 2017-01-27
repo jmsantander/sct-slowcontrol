@@ -32,7 +32,7 @@ public:
 
     void apply_settings(bool simulation_mode);
 
-    void print_data();
+    void print_data(int data_type);
 
     // Initialize backplane for low level communication
     // Needed for Pi only - at a later point this will be better served using
