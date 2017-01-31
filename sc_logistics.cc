@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <ctime>
+#include <algorithm>
 
 #include "sc_logistics.h"
 
@@ -46,19 +47,19 @@ bool read_command(std::string &command, std::string &value)
 // Sleep for a given number of milliseconds
 void sleep_msec(int msec)
 {
+    msec = std::min(msec, 999);
     struct timespec tim;
-    const long NSEC = 1000000 * msec; // convert millisec to nanosec
     tim.tv_sec = 0;
-    tim.tv_nsec = NSEC;
+    tim.tv_nsec = 1000000 * msec; // convert millisec to nanosec
 
     nanosleep(&tim, NULL);
 }
 
-// Simulate reading voltages, for testing without a real Pi
-void simulate_voltages(float voltages[], const int n_fees)
+// Simulate reading FEE data, for testing without a real Pi
+void simulate_fee_data(float fee_buffer[], const int n_fees)
 {
     sleep_msec(40);
     for (int i = 0; i < n_fees; i++) {
-		voltages[i] = i;
+		fee_buffer[i] = i;
     }
 }

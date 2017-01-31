@@ -6,17 +6,15 @@
 
 #include "sc_protobuf.pb.h"
 #include "sc_network.h"
+#include "sc_logistics.h"
 
 #define N_FEES 32
-
-// Codes for updating data and settings
-#define BP_NONE 0
-#define BP_VOLTAGES 1
 
 class Backplane
 {
 private:
     float voltages_[N_FEES];
+    float currents_[N_FEES];
     int requested_updates_;
     slow_control::Backplane_data data_buffer;
     slow_control::Backplane_settings settings_buffer;
@@ -26,6 +24,7 @@ public:
 
     void update_data(int requested_updates = BP_NONE,
             bool simulation_mode = false);
+
     void update_settings(int requested_updates = BP_NONE);
 
     bool synchronize_network(Network_info &netinfo);

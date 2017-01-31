@@ -20,6 +20,8 @@ Backplane::Backplane()
     for (int i = 0; i < N_FEES; i++) {
         voltages_[i] = 0.0;
         data_buffer.add_voltage(0.0);
+        currents_[i] = 0.0;
+        data_buffer.add_current(0.0);
     }
     
     requested_updates_ = BP_NONE;
@@ -28,17 +30,29 @@ Backplane::Backplane()
 
 void Backplane::update_data(int requested_updates, bool simulation_mode)
 {
-    if (requested_updates == BP_NONE) {
-        return;
-    } else if (requested_updates == BP_VOLTAGES) {
-        if (!simulation_mode) {
-            read_voltages(voltages_, N_FEES);
-        } else {
-            simulate_voltages(voltages_, N_FEES);
+    switch(requested_updates) {
+        case BP_VOLTAGES:
+        case BP_CURRENTS:
+        {
+            float fee_buffer[N_FEES];
+            if (!simulation_mode) {
+                read_fee_data(requested_updates, fee_buffer);
+            } else {
+                simulate_fee_data(fee_buffer, N_FEES);
+            }
+            for (int i = 0; i < N_FEES; i++) {
+                if (requested_updates == BP_VOLTAGES) {
+                    voltages_[i] = fee_buffer[i];
+                    data_buffer.set_voltage(i, voltages_[i]);
+                } else if (requested_updates == BP_CURRENTS) {
+                    currents_[i] = fee_buffer[i];
+                    data_buffer.set_current(i, currents_[i]);
+                }
+            }
+            break;
         }
-        for (int i = 0; i < N_FEES; i++) {
-            data_buffer.set_voltage(i, voltages_[i]);
-        }
+        default:
+            return;
     }
     
     updates_to_send = true;
@@ -122,6 +136,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     std::cout << "Updating data..." << std::endl;
                     for (int i = 0; i < N_FEES; i++) {
                         voltages_[i] = data_buffer.voltage(i);
+                        currents_[i] = data_buffer.current(i);
                     }
                 }
             }
@@ -152,17 +167,25 @@ void Backplane::print_data(int data_type)
         case BP_NONE:
             return;
         case BP_VOLTAGES:
+        case BP_CURRENTS:
         {
-            std::cout << std::endl << "FEE Voltages:" << std::endl;
+            float *data_buffer; 
+            if (data_type == BP_VOLTAGES) {
+                std::cout << std::endl << "FEE voltages:" << std::endl;
+                data_buffer = voltages_;
+            } else if (data_type == BP_CURRENTS) {
+                std::cout << std::endl << "FEE currents:" << std::endl;
+                data_buffer = currents_;
+            }
             std::cout << std::fixed << std::setprecision(2);
             for (int i = 0; i < N_FEES; i++) {
                 if (i == 0 || i == 28) {
-                    std::cout << "      " << std::setw(5) << voltages_[i] 
+                    std::cout << "      " << std::setw(5) << data_buffer[i] 
                         << " ";
                 } else if (i == 3 || i == 31) {
-                    std::cout << std::setw(5) << voltages_[i] << "      ";
+                    std::cout << std::setw(5) << data_buffer[i] << "      ";
                 } else {
-                    std::cout << std::setw(5) << voltages_[i] << " ";
+                    std::cout << std::setw(5) << data_buffer[i] << " ";
                 }
                 if (i == 3 || i == 9 || i == 15 || i == 21 || i == 27 || 
                         i == 31) {

@@ -56,6 +56,10 @@
 
 #define  DWnull   	0x0000   /* zero word */
 
+// Conversion factors from SPI readout to units
+#define VOLT_CONVERSION_FACTOR 0.006158 // convert to volts
+#define AMP_CONVERSION_FACTOR 0.00117 // convert to amps
+
 bool initialize_lowlevel()
 {
 	if (!bcm2835_init()) {
@@ -125,7 +129,6 @@ void transfer_message(unsigned short *message, unsigned short *pdata)
 	unsigned short dummy_word;
 	unsigned short som_word;
 	unsigned short cmd_word;
-	unsigned short eom_word;
 
 	// Write Start word
 	// By causality, nobody is in a state to send anything back on MISO
@@ -183,35 +186,23 @@ void trig_adcs()
 	delay(100);
 }
 
-//// From BP SPI code. Keeping this for now since I don't know why the code was
-//// written this way but there has to be a better way to implement a short 
-//// delay. - Ari
-//void tdelay(int msec){
-//    int i;
-//    long j;
-//    for (i = 0; i < msec; i++){
-//        for (j=0; j<532000; j++);
-//    }
-//    return;
-//}
-
-// Implement a time delay in milliseconds
-void tdelay(int msec) {
-    sleep_msec(msec);
-}
-
-// Read in and store FEE housekeeping voltages
-void read_voltages(float voltages[], const int n_fees)
+// Read in and store FEE housekeeping data
+void read_fee_data(int data_type, float fee_buffer[])
 {
-    unsigned short voltsarray[n_fees];
 	unsigned short data[11];
 	unsigned short spi_message[11];
+
+    // Define conversion factor from SPI readout to meaningful unit
+    float cf = 1.0;
+    if (data_type == BP_VOLTAGES) {
+        cf = VOLT_CONVERSION_FACTOR;
+    } else if (data_type == BP_CURRENTS) {
+        cf = AMP_CONVERSION_FACTOR;
+    }
 	
     trig_adcs();
 	
-	tdelay(10);
 	spi_message[0] = SPI_SOM_HKFPGA; // som
-	spi_message[1] = CW_RD_FEE0_V; //cw
 	spi_message[2] = 0x0111;
 	spi_message[3] = 0x1222;
 	spi_message[4] = 0x2333;
@@ -221,60 +212,73 @@ void read_voltages(float voltages[], const int n_fees)
 	spi_message[8] = 0x0000;
 	spi_message[9] = 0x0088;	
 	spi_message[10] = SPI_EOM_HKFPGA; // not used
-	transfer_message(spi_message, data);
 	
-    voltsarray[5]  = data[2];
-	voltsarray[12] = data[3];
-	voltsarray[6]  = data[4];
-	voltsarray[17] = data[5];
-	voltsarray[7]  = data[6];
-	voltsarray[13] = data[7];
-	voltsarray[11] = data[8];
-	voltsarray[18] = data[9];
-		
-	tdelay(10);
-	spi_message[1] = CW_RD_FEE8_V; //cw
-	transfer_message(spi_message,data);
-	
-    voltsarray[4]  = data[2];
-	voltsarray[10] = data[3];
-	voltsarray[1]  = data[4];
-	voltsarray[0]  = data[5];
-	voltsarray[3]  = data[6];
-	voltsarray[2]  = data[7];
-	voltsarray[16] = data[8];
-	voltsarray[22] = data[9];
-	
-	tdelay(10);
-	spi_message[1] = CW_RD_FEE16_V; //cw
-	transfer_message(spi_message, data);
-
-    voltsarray[28] = data[2];
-	voltsarray[24] = data[3];
-	voltsarray[30] = data[4];
-	voltsarray[23] = data[5];
-	voltsarray[31] = data[6];
-	voltsarray[29] = data[7];
-	voltsarray[26] = data[8];
-	voltsarray[25] = data[9];
-	
-	tdelay(10);
-	spi_message[1] = CW_RD_FEE24_V; //cw
-	transfer_message(spi_message, data);
-	
-    voltsarray[20] = data[2];
-	voltsarray[8]  = data[3];
-	voltsarray[27] = data[4];
-	voltsarray[15] = data[5];
-	voltsarray[9]  = data[6];
-	voltsarray[19] = data[7];
-	voltsarray[21] = data[8];
-	voltsarray[14] = data[9];
-
-    // I don't know what this magic number is - Ari
-	// FEE voltages should be ~12V
-    for (int i = 0; i < n_fees; i++) {
-		voltages[i] = voltsarray[i] * 0.006158;
+    sleep_msec(10);
+    if (data_type == BP_VOLTAGES) {
+        spi_message[1] = CW_RD_FEE0_V;
+    } else if (data_type == BP_CURRENTS) {
+        spi_message[1] = CW_RD_FEE0_I;
     }
+	transfer_message(spi_message, data);
+	
+    fee_buffer[5]  = data[2] * cf;
+	fee_buffer[12] = data[3] * cf;
+	fee_buffer[6]  = data[4] * cf;
+	fee_buffer[17] = data[5] * cf;
+	fee_buffer[7]  = data[6] * cf;
+	fee_buffer[13] = data[7] * cf;
+	fee_buffer[11] = data[8] * cf;
+	fee_buffer[18] = data[9] * cf;
+		
+	sleep_msec(10);
+    if (data_type == BP_VOLTAGES) {
+        spi_message[1] = CW_RD_FEE8_V;
+    } else if (data_type == BP_CURRENTS) {
+        spi_message[1] = CW_RD_FEE8_I;
+    }
+	transfer_message(spi_message, data);
+	
+    fee_buffer[4]  = data[2] * cf;
+	fee_buffer[10] = data[3] * cf;
+	fee_buffer[1]  = data[4] * cf;
+	fee_buffer[0]  = data[5] * cf;
+	fee_buffer[3]  = data[6] * cf;
+	fee_buffer[2]  = data[7] * cf;
+	fee_buffer[16] = data[8] * cf;
+	fee_buffer[22] = data[9] * cf;
+	
+	sleep_msec(10);
+    if (data_type == BP_VOLTAGES) {
+        spi_message[1] = CW_RD_FEE16_V;
+    } else if (data_type == BP_CURRENTS) {
+        spi_message[1] = CW_RD_FEE16_I;
+    }
+	transfer_message(spi_message, data);
+
+    fee_buffer[28] = data[2] * cf;
+	fee_buffer[24] = data[3] * cf;
+	fee_buffer[30] = data[4] * cf;
+	fee_buffer[23] = data[5] * cf;
+	fee_buffer[31] = data[6] * cf;
+	fee_buffer[29] = data[7] * cf;
+	fee_buffer[26] = data[8] * cf;
+	fee_buffer[25] = data[9] * cf;
+	
+	sleep_msec(10);
+    if (data_type == BP_VOLTAGES) {
+        spi_message[1] = CW_RD_FEE24_V;
+    } else if (data_type == BP_CURRENTS) {
+        spi_message[1] = CW_RD_FEE24_I;
+    }
+	transfer_message(spi_message, data);
+	
+    fee_buffer[20] = data[2] * cf;
+	fee_buffer[8]  = data[3] * cf;
+	fee_buffer[27] = data[4] * cf;
+	fee_buffer[15] = data[5] * cf;
+	fee_buffer[9]  = data[6] * cf;
+	fee_buffer[19] = data[7] * cf;
+	fee_buffer[21] = data[8] * cf;
+	fee_buffer[14] = data[9] * cf;
 }
 

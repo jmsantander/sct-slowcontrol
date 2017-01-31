@@ -9,6 +9,15 @@
 #include "sc_backplane.h"
 #include "sc_logistics.h"
 
+// Convenience function to update backplane with new requested settings and
+// synchronizing them over the network
+void update_and_send_settings(Backplane &backplane, Network_info &netinfo, 
+        int new_settings)
+{
+    backplane.update_settings(new_settings);
+    backplane.synchronize_network(netinfo);
+}
+
 int main(int argc, char *argv[])
 {
     // Parse command line arguments
@@ -36,20 +45,25 @@ int main(int argc, char *argv[])
         // Read in a command from the user
         read_command(command, value);
         // Execute the command
-        if (command.compare("e") == 0) {
-            // Exit the GUI
-            // Shut down network
-            std::cout << "Exit." << std::endl;
-            if (!shutdown_network(netinfo))
-                return 1;
-            break;
-        } else if (command.compare("v") == 0) {
+        if (command.compare("v") == 0) {
             // Read FEE housekeeping voltages
             std::cout << "Read voltages." << std::endl;
             new_settings = BP_VOLTAGES;
-            backplane.update_settings(new_settings);
-            // Send new settings
-            backplane.synchronize_network(netinfo);
+            update_and_send_settings(backplane, netinfo, new_settings);
+        } else if (command.compare("i") == 0) {
+            // Read FEE currents
+            std::cout << "Read currents." << std::endl;
+            new_settings = BP_CURRENTS;
+            update_and_send_settings(backplane, netinfo, new_settings);
+        } else if (command.compare("x") == 0) {
+            // Exit the GUI
+            std::cout << "Exit." << std::endl;
+            // Shut down network first
+            if (!shutdown_network(netinfo))
+                return 1;
+            break;
+        } else if (command.compare("") == 0) {
+            continue; 
         } else {
             std::cout << "Command not recognized." << std::endl;
             continue;

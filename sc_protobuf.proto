@@ -2,6 +2,7 @@ package slow_control;
 
 message Backplane_data {
     repeated float voltage = 1;
+    repeated float current = 2;
 }
 
 message Backplane_settings {
