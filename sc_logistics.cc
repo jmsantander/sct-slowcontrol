@@ -63,3 +63,11 @@ void simulate_fee_data(float fee_buffer[], const int n_fees)
 		fee_buffer[i] = i;
     }
 }
+
+// Simulate reading FEEs present, for testing without a real Pi
+void simulate_fees_present(unsigned short fees_present[], const int n_fees)
+{
+    for (int i = 0; i < n_fees; i++) {
+        fees_present[i] = i % 2;
+    }
+}

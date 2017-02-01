@@ -45,14 +45,19 @@ int main(int argc, char *argv[])
         // Read in a command from the user
         read_command(command, value);
         // Execute the command
-        if (command.compare("v") == 0) {
+        if (command.compare("p") == 0) {
+            // Read if FEEs present
+            std::cout << "Read FEEs present." << std::endl;
+            new_settings = FEE_PRESENT;
+            update_and_send_settings(backplane, netinfo, new_settings);
+        } else if (command.compare("v") == 0) {
             // Read FEE housekeeping voltages
-            std::cout << "Read voltages." << std::endl;
+            std::cout << "Read FEE voltages (V)." << std::endl;
             new_settings = BP_VOLTAGES;
             update_and_send_settings(backplane, netinfo, new_settings);
         } else if (command.compare("i") == 0) {
             // Read FEE currents
-            std::cout << "Read currents." << std::endl;
+            std::cout << "Read FEE currents (A)." << std::endl;
             new_settings = BP_CURRENTS;
             update_and_send_settings(backplane, netinfo, new_settings);
         } else if (command.compare("x") == 0) {

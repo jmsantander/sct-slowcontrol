@@ -22,6 +22,8 @@ Backplane::Backplane()
         data_buffer.add_voltage(0.0);
         currents_[i] = 0.0;
         data_buffer.add_current(0.0);
+        present_[i] = 0;
+        data_buffer.add_present(0);
     }
     
     requested_updates_ = BP_NONE;
@@ -48,6 +50,20 @@ void Backplane::update_data(int requested_updates, bool simulation_mode)
                     currents_[i] = fee_buffer[i];
                     data_buffer.set_current(i, currents_[i]);
                 }
+            }
+            break;
+        }
+        case FEE_PRESENT:
+        {
+            unsigned short fees_present[N_FEES];
+            if (!simulation_mode) {
+                read_fees_present(fees_present);
+            } else {
+                simulate_fees_present(fees_present, N_FEES);
+            }
+            for (int i = 0; i < N_FEES; i++) {
+                present_[i] = fees_present[i];
+                data_buffer.set_present(i, present_[i]);
             }
             break;
         }
@@ -137,6 +153,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     for (int i = 0; i < N_FEES; i++) {
                         voltages_[i] = data_buffer.voltage(i);
                         currents_[i] = data_buffer.current(i);
+                        present_[i] = data_buffer.present(i);
                     }
                 }
             }
@@ -166,6 +183,25 @@ void Backplane::print_data(int data_type)
     switch(data_type) {
         case BP_NONE:
             return;
+        case FEE_PRESENT:
+        {
+           for (int i = 0; i < N_FEES; i++) {
+                if (i == 0 || i == 28) {
+                    std::cout << "   " << std::setw(2) << present_[i] 
+                        << " ";
+                } else if (i == 3 || i == 31) {
+                    std::cout << std::setw(2) << present_[i] << "   ";
+                } else {
+                    std::cout << std::setw(2) << present_[i] << " ";
+                }
+                if (i == 3 || i == 9 || i == 15 || i == 21 || i == 27 || 
+                        i == 31) {
+                    std::cout << std::endl;
+                }
+            }
+            std::cout << std::endl;
+            break;
+        }
         case BP_VOLTAGES:
         case BP_CURRENTS:
         {

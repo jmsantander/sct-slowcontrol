@@ -186,6 +186,62 @@ void trig_adcs()
 	delay(100);
 }
 
+// Determine which FEEs are present
+void read_fees_present(unsigned short fees_present[])
+{
+    unsigned short spi_message[11];
+    unsigned short data[11];
+
+    spi_message[0] = SPI_SOM_HKFPGA; // som
+    spi_message[1] = CW_FEEs_PRESENT; // cw
+    spi_message[2] = 0x0111;
+    spi_message[3] = 0x1222;
+    spi_message[4] = 0x2333;
+    spi_message[5] = 0x3444;
+    spi_message[6] = 0x4555;
+    spi_message[7] = 0x5666;
+    spi_message[8] = 0x6777;
+    spi_message[9] = 0x7888;
+    spi_message[10] = SPI_EOM_HKFPGA; // not used
+    transfer_message(spi_message, data);
+
+    // data[2] is FEEs present J0-15
+    // data[3] is FEEs present J16-31
+    
+    fees_present[0] = data[2] & 0x0001;
+    fees_present[1] = data[2] & 0x0002 >> 1;
+    fees_present[2] = data[2] & 0x0004 >> 2;
+    fees_present[3] = data[2] & 0x0008 >> 3;
+    fees_present[4] = data[2] & 0x0010 >> 4;
+    fees_present[5] = data[2] & 0x0020 >> 5;
+    fees_present[6] = data[2] & 0x0040 >> 6;
+    fees_present[7] = data[2] & 0x0080 >> 7;
+    fees_present[8] = data[2] & 0x0100 >> 8;
+    fees_present[9] = data[2] & 0x0200 >> 9;
+    fees_present[10] = data[2] & 0x0400 >> 10;
+    fees_present[11] = data[2] & 0x0800 >> 11;
+    fees_present[12] = data[2] & 0x1000 >> 12;
+    fees_present[13] = data[2] & 0x2000 >> 13;
+    fees_present[14] = data[2] & 0x4000 >> 14;
+    fees_present[15] = data[2] & 0x8000 >> 15;
+    fees_present[16] = data[3] & 0x0001;
+    fees_present[17] = data[3] & 0x0002 >> 1;
+    fees_present[18] = data[3] & 0x0004 >> 2;
+    fees_present[19] = data[3] & 0x0008 >> 3;
+    fees_present[20] = data[3] & 0x0010 >> 4;
+    fees_present[21] = data[3] & 0x0020 >> 5;
+    fees_present[22] = data[3] & 0x0040 >> 6;
+    fees_present[23] = data[3] & 0x0080 >> 7;
+    fees_present[24] = data[3] & 0x0100 >> 8;
+    fees_present[25] = data[3] & 0x0200 >> 9;
+    fees_present[26] = data[3] & 0x0400 >> 10;
+    fees_present[27] = data[3] & 0x0800 >> 11;
+    fees_present[28] = data[3] & 0x1000 >> 12;
+    fees_present[29] = data[3] & 0x2000 >> 13;
+    fees_present[30] = data[3] & 0x4000 >> 14;
+    fees_present[31] = data[3] & 0x8000 >> 15;
+}
+
 // Read in and store FEE housekeeping data
 void read_fee_data(int data_type, float fee_buffer[])
 {

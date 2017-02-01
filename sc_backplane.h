@@ -15,6 +15,7 @@ class Backplane
 private:
     float voltages_[N_FEES];
     float currents_[N_FEES];
+    unsigned short present_[N_FEES];
     int requested_updates_;
     slow_control::Backplane_data data_buffer;
     slow_control::Backplane_settings settings_buffer;
