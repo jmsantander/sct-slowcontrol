@@ -13,4 +13,7 @@ void read_fee_data(int data_type, float fee_buffer[]);
 // Read in and store FEEs present
 void read_fees_present(unsigned short fees_present[]);
 
+// Reset trigger and nstimer
+void reset_trigger_and_nstimer();
+
 #endif

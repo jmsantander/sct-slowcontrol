@@ -60,6 +60,11 @@ int main(int argc, char *argv[])
             std::cout << "Read FEE currents (A)." << std::endl;
             new_settings = BP_CURRENTS;
             update_and_send_settings(backplane, netinfo, new_settings);
+        } else if (command.compare("l") == 0) {
+            // Reset trigger counter and timer
+            std::cout << "Reset trigger counter and timer." << std::endl;
+            new_settings = BP_RESET_TRIGGER_AND_NSTIMER;
+            update_and_send_settings(backplane, netinfo, new_settings);
         } else if (command.compare("x") == 0) {
             // Exit the GUI
             std::cout << "Exit." << std::endl;

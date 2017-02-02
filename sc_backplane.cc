@@ -67,6 +67,16 @@ void Backplane::update_data(int requested_updates, bool simulation_mode)
             }
             break;
         }
+        case BP_RESET_TRIGGER_AND_NSTIMER:
+        {
+            if (!simulation_mode) {
+                reset_trigger_and_nstimer();
+            } else {
+                std::cout << "Simulating resetting trigger and nstimer..."
+                    << std::endl;
+            }
+            break;
+        }
         default:
             return;
     }

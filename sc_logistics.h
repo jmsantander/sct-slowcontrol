@@ -7,6 +7,7 @@
 #define BP_VOLTAGES 1
 #define BP_CURRENTS 2
 #define FEE_PRESENT 3
+#define BP_RESET_TRIGGER_AND_NSTIMER 4
 
 // Read in and store a command from the user from stdin
 // Return true if the command is valid, false otherwise

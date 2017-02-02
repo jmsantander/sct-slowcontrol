@@ -338,3 +338,22 @@ void read_fee_data(int data_type, float fee_buffer[])
 	fee_buffer[14] = data[9] * cf;
 }
 
+// Reset trigger and nstimer
+void reset_trigger_and_nstimer()
+{
+	unsigned short spi_message[11];
+	unsigned short data[11];
+	
+    spi_message[0] = SPI_SOM_TFPGA; //som
+	spi_message[1] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
+	spi_message[2] = 0x0111;
+	spi_message[3] = 0x1222;
+	spi_message[4] = 0x2333;
+	spi_message[5] = 0x3444;
+	spi_message[6] = 0x4555;
+	spi_message[7] = 0x5666;
+	spi_message[8] = 0x6777;
+	spi_message[9] = 0x7888;			
+	spi_message[10] = SPI_EOM_TFPGA; //not used
+	transfer_message(spi_message, data);
+}
