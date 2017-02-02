@@ -24,7 +24,10 @@ bool read_command(std::string &command, std::string &value)
 {
     std::string s;
     std::vector<std::string> words;
-    
+
+    command = "";
+    value = "";
+
     std::cout << "Enter command: ";
 
     std::getline(std::cin, s);
@@ -37,8 +40,6 @@ bool read_command(std::string &command, std::string &value)
     command = words[0];
     if (words.size() == 2) {
         value = words[1];
-    } else {
-        value = "";
     }
 
     return true;

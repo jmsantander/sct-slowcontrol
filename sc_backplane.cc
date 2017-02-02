@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <limits>
 
 #include "sc_backplane.h"
 #include "sc_network.h"
@@ -25,12 +26,23 @@ Backplane::Backplane()
         present_[i] = 0;
         data_buffer.add_present(0);
     }
+
+    for (int i = 0; i < N_SPI; i++) {
+        spi_data_[i] = 0;
+        data_buffer.add_spi_data(0);
+    }
+
+    for (int i = 0; i < N_COMMANDS; i++) {
+        commands_[i] = 0;
+        settings_buffer.add_command(0);
+    }
     
     requested_updates_ = BP_NONE;
     updates_to_send = false;
 }
 
-void Backplane::update_data(int requested_updates, bool simulation_mode)
+void Backplane::update_data(int requested_updates,
+        unsigned short commands_for_request[], bool simulation_mode)
 {
     switch(requested_updates) {
         case BP_VOLTAGES:
@@ -77,6 +89,23 @@ void Backplane::update_data(int requested_updates, bool simulation_mode)
             }
             break;
         }
+        case BP_SET_TRIGGER:
+        {
+            unsigned short spi_data[11];
+            if (!simulation_mode) {
+                set_trigger(commands_for_request, spi_data);
+            } else {
+                // simulate
+                for (int i = 0; i < N_SPI; i++) {
+                    spi_data[i] = i;
+                }
+            }
+            for (int i = 0; i < N_SPI; i++) {
+                spi_data_[i] = spi_data[i];
+                data_buffer.set_spi_data(i, spi_data_[i]);
+            }
+            break;
+        }
         default:
             return;
     }
@@ -84,10 +113,15 @@ void Backplane::update_data(int requested_updates, bool simulation_mode)
     updates_to_send = true;
 }
 
-void Backplane::update_settings(int requested_updates)
+void Backplane::update_settings(int requested_updates,
+        unsigned short settings_commands[])
 {
     requested_updates_ = requested_updates;
     settings_buffer.set_requested_updates(requested_updates_);
+
+    for (int i = 0; i < N_COMMANDS; i++) {
+        settings_buffer.set_command(i, settings_commands[i]);
+    }
 
     updates_to_send = true;
 }
@@ -122,6 +156,9 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     }
                     std::cout << "Received settings.\n"; //TESTING
                     requested_updates_ = settings_buffer.requested_updates();
+                    for (int i = 0; i < N_COMMANDS; i++) {
+                        commands_[i] = settings_buffer.command(i);
+                    }
                 }
             }
             break;
@@ -165,6 +202,9 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                         currents_[i] = data_buffer.current(i);
                         present_[i] = data_buffer.present(i);
                     }
+                    for (int i = 0; i < N_SPI; i++) {
+                        spi_data_[i] = data_buffer.spi_data(i);
+                    }
                 }
             }
             break;
@@ -184,7 +224,7 @@ bool Backplane::pi_initialize_lowlevel()
     
 void Backplane::apply_settings(bool simulation_mode)
 {
-    update_data(requested_updates_, simulation_mode);
+    update_data(requested_updates_, commands_, simulation_mode);
     requested_updates_ = BP_NONE;
 }
 
@@ -239,6 +279,25 @@ void Backplane::print_data(int data_type)
                 }
             }
             std::cout << std::endl;
+            break;
+        }
+        case BP_SET_TRIGGER:
+        {
+            std::cout 
+                << " SOM  CMD DW 1 DW 2 DW 3 DW 4 DW 5 DW 6 DW 7 DW 8  EOM" 
+                << std::endl;
+            std::cout << "\033[1;34m" << std::hex << std::setw(4)
+                << std::setfill('0') << spi_data_[0] << "\033[0m ";
+            std::cout << "\033[1;33m" << std::hex << std::setw(4)
+                << std::setfill('0') << spi_data_[1] << "\033[0m ";
+            for (int i = 2; i < 10; i++) {
+                std::cout << std::hex << std::setw(4) << std::setfill('0')
+                    << spi_data_[i] << " ";
+            }
+            std::cout << "\033[1;34m" << std::hex << std::setw(4)
+                << std::setfill('0') << spi_data_[10] << "\033[0m "
+                << std::endl << std::endl;
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             break;
         }
     }

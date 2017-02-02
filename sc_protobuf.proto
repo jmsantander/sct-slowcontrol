@@ -3,8 +3,11 @@ package slow_control;
 message Backplane_data {
     repeated float voltage = 1;
     repeated float current = 2;
+    repeated int32 present = 3;
+    repeated int32 spi_data = 4;
 }
 
 message Backplane_settings {
     optional int32 requested_updates = 1;
+    repeated int32 command = 2;
 }

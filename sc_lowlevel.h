@@ -16,4 +16,7 @@ void read_fees_present(unsigned short fees_present[]);
 // Reset trigger and nstimer
 void reset_trigger_and_nstimer();
 
+// Set trigger
+void set_trigger(unsigned short spi_commands[], unsigned short spi_data[]);
+
 #endif

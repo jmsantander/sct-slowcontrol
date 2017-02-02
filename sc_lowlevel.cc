@@ -357,3 +357,22 @@ void reset_trigger_and_nstimer()
 	spi_message[10] = SPI_EOM_TFPGA; //not used
 	transfer_message(spi_message, data);
 }
+
+// Set trigger
+void set_trigger(unsigned short spi_commands[], unsigned short spi_data[])
+{
+	unsigned short spi_message[11];
+			
+    spi_message[0] = SPI_SOM_TFPGA; //som
+	spi_message[1] = SPI_SET_TRIG_AT_TIME; //cw
+	spi_message[2] = spi_commands[0];
+	spi_message[3] = spi_commands[1];
+	spi_message[4] = spi_commands[2];
+	spi_message[5] = spi_commands[3];
+	spi_message[6] = 0x0005;
+	spi_message[7] = 0x0006;
+	spi_message[8] = 0x0007;
+	spi_message[9] = 0x0008;			
+	spi_message[10] = SPI_EOM_TFPGA; //not used
+	transfer_message(spi_message, spi_data);
+}
