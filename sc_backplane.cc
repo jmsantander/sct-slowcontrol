@@ -4,7 +4,6 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <limits>
 
 #include "sc_backplane.h"
 #include "sc_network.h"
@@ -31,6 +30,12 @@ Backplane::Backplane()
         spi_data_[i] = 0;
         data_buffer.add_spi_data(0);
     }
+
+    nstimer_ = 0;
+    tack_count_ = 0;
+    trigger_count_ = 0;
+    tack_rate_ = 0.0;
+    trigger_rate_ = 0.0;
 
     for (int i = 0; i < N_COMMANDS; i++) {
         commands_[i] = 0;
@@ -100,6 +105,42 @@ void Backplane::update_data(int requested_updates,
                     spi_data[i] = i;
                 }
             }
+            for (int i = 0; i < N_SPI; i++) {
+                spi_data_[i] = spi_data[i];
+                data_buffer.set_spi_data(i, spi_data_[i]);
+            }
+            break;
+        }
+        case BP_READ_NSTIMER_TRIGGER_RATE:
+        {
+            unsigned long long nstimer = 0;
+            unsigned long tack_count = 0, trigger_count = 0;
+            float tack_rate = 0, trigger_rate = 0;
+            unsigned short spi_data[11];
+            if (!simulation_mode) {
+                read_nstimer_trigger_rate(nstimer, tack_count, trigger_count,
+                        tack_rate, trigger_rate, spi_data);
+            } else {
+                // simulate
+                nstimer = 10000;
+                tack_count = 300;
+                trigger_count = 400;
+                tack_rate = 10.10;
+                trigger_rate = 11.11;
+                for (int i = 0; i < N_SPI; i++) {
+                    spi_data[i] = i;
+                }
+            }
+            nstimer_ = nstimer;
+            data_buffer.set_nstimer(nstimer_);
+            tack_count_ = tack_count;
+            data_buffer.set_tack_count(tack_count_);
+            trigger_count_ = trigger_count;
+            data_buffer.set_trigger_count(trigger_count_);
+            tack_rate_ = tack_rate;
+            data_buffer.set_tack_rate(tack_rate_);
+            trigger_rate_ = trigger_rate;
+            data_buffer.set_trigger_rate(trigger_rate_);
             for (int i = 0; i < N_SPI; i++) {
                 spi_data_[i] = spi_data[i];
                 data_buffer.set_spi_data(i, spi_data_[i]);
@@ -205,6 +246,11 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     for (int i = 0; i < N_SPI; i++) {
                         spi_data_[i] = data_buffer.spi_data(i);
                     }
+                    nstimer_ = data_buffer.nstimer();
+                    tack_count_ = data_buffer.tack_count();
+                    trigger_count_ = data_buffer.trigger_count();
+                    tack_rate_ = data_buffer.tack_rate();
+                    trigger_rate_ = data_buffer.trigger_rate();
                 }
             }
             break;
@@ -283,21 +329,18 @@ void Backplane::print_data(int data_type)
         }
         case BP_SET_TRIGGER:
         {
-            std::cout 
-                << " SOM  CMD DW 1 DW 2 DW 3 DW 4 DW 5 DW 6 DW 7 DW 8  EOM" 
-                << std::endl;
-            std::cout << "\033[1;34m" << std::hex << std::setw(4)
-                << std::setfill('0') << spi_data_[0] << "\033[0m ";
-            std::cout << "\033[1;33m" << std::hex << std::setw(4)
-                << std::setfill('0') << spi_data_[1] << "\033[0m ";
-            for (int i = 2; i < 10; i++) {
-                std::cout << std::hex << std::setw(4) << std::setfill('0')
-                    << spi_data_[i] << " ";
-            }
-            std::cout << "\033[1;34m" << std::hex << std::setw(4)
-                << std::setfill('0') << spi_data_[10] << "\033[0m "
-                << std::endl << std::endl;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            display_spi_data(spi_data_);
+            break;
+        }
+        case BP_READ_NSTIMER_TRIGGER_RATE:
+        {
+            display_spi_data(spi_data_);
+            printf("nsTimer %llu ns\n", nstimer_);
+            printf("TACK Count %lu\n", tack_count_);
+            printf("TACK Rate: %6.2f Hz\n", tack_rate_);
+            // 4 phases or external trigger can HW trigger
+        	printf("Hardware Trigger Count %lu\n", trigger_count_);
+        	printf("HW Trigger Rate: %6.2f Hz\n", trigger_rate_);
             break;
         }
     }

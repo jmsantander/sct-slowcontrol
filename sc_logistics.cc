@@ -1,6 +1,7 @@
 // Implementation of slow control logistics functions
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <vector>
 #include <ctime>
@@ -71,4 +72,22 @@ void simulate_fees_present(unsigned short fees_present[], const int n_fees)
     for (int i = 0; i < n_fees; i++) {
         fees_present[i] = i % 2;
     }
+}
+
+// Display SPI data
+void display_spi_data(unsigned short spi_data[])
+{
+    std::cout << " SOM  CMD DW 1 DW 2 DW 3 DW 4 DW 5 DW 6 DW 7 DW 8  EOM" 
+        << std::endl;
+    std::cout << std::setfill('0');
+    std::cout << "\033[1;34m" << std::hex << std::setw(4) << spi_data[0]
+        << "\033[0m ";
+    std::cout << "\033[1;33m" << std::hex << std::setw(4) << spi_data[1]
+        << "\033[0m ";
+    for (int i = 2; i < 10; i++) {
+        std::cout << std::hex << std::setw(4) << spi_data[i] << " ";
+    }
+    std::cout << "\033[1;34m" << std::hex << std::setw(4) << spi_data[10]
+        << "\033[0m " << std::endl << std::endl;
+    std::cout << std::setfill(' '); // clear fill
 }

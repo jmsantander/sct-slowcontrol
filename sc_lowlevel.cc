@@ -3,7 +3,7 @@
 // Most of the code below is copied directly from the BP SPI interface code
 // written by Phil Moore and Richard Bose. 
 
-#include <stdlib.h>
+#include <cstdlib>
 #include "bcm2835.h" // Driver for SPI chip
 #include "sc_logistics.h"
 
@@ -375,4 +375,36 @@ void set_trigger(unsigned short spi_commands[], unsigned short spi_data[])
 	spi_message[9] = 0x0008;			
 	spi_message[10] = SPI_EOM_TFPGA; //not used
 	transfer_message(spi_message, spi_data);
+}
+
+// Read nstimer, tack count and rate, and trigger count and rate
+void read_nstimer_trigger_rate(unsigned long long &nstimer,
+        unsigned long &tack_count, unsigned long &trigger_count,
+        float &tack_rate, float &trigger_rate, unsigned short spi_data[]) {
+	unsigned short spi_message[11];
+    
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = SPI_READ_nsTimer_TFPGA; //cw
+    spi_message[2] = 0X0001;
+    spi_message[3] = 0X0002;
+    spi_message[4] = 0X0003;
+    spi_message[5] = 0X0004;
+    spi_message[6] = 0x0005;
+    spi_message[7] = 0x0006;
+    spi_message[8] = 0x0007;
+    spi_message[9] = 0x0008;			
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, spi_data);
+    
+    nstimer = ( ((unsigned long long) spi_data[2] << 48) |
+	       ((unsigned long long) spi_data[3] << 32) |
+	       ((unsigned long long) spi_data[4] << 16) |
+	       ((unsigned long long) spi_data[5]      ));
+    //TFPGA adds one extra on reset
+    tack_count = ((spi_data[6] << 16) | spi_data[7]) - 1;
+    tack_rate = (float) nstimer / 1000000000;
+    tack_rate = tack_count / tack_rate;
+	trigger_count = ((spi_data[8] << 16) | spi_data[9]) - 1;
+	trigger_rate = (float) nstimer / 1000000000;
+	trigger_rate = trigger_count / trigger_rate;
 }

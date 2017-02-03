@@ -5,6 +5,11 @@ message Backplane_data {
     repeated float current = 2;
     repeated int32 present = 3;
     repeated int32 spi_data = 4;
+    optional uint64 nstimer = 5;
+    optional uint64 tack_count = 6;
+    optional uint64 trigger_count = 7;
+    optional float tack_rate = 8;
+    optional float trigger_rate = 9;
 }
 
 message Backplane_settings {

@@ -19,4 +19,9 @@ void reset_trigger_and_nstimer();
 // Set trigger
 void set_trigger(unsigned short spi_commands[], unsigned short spi_data[]);
 
+// Read nstimer, tack count and rate, and trigger count and rate
+void read_nstimer_trigger_rate(unsigned long long &nstimer,
+        unsigned long &tack_count, unsigned long &trigger_count,
+        float &tack_rate, float &trigger_rate, unsigned short spi_data[]);
+
 #endif

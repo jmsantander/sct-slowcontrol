@@ -19,11 +19,18 @@ private:
     float currents_[N_FEES];
     unsigned short present_[N_FEES];
     unsigned short spi_data_[N_SPI];
+    unsigned long long nstimer_;
+    unsigned long tack_count_;
+    unsigned long trigger_count_;
+    float tack_rate_;
+    float trigger_rate_;
+
     int requested_updates_;
     unsigned short commands_[N_COMMANDS];
+    bool updates_to_send;
+
     slow_control::Backplane_data data_buffer;
     slow_control::Backplane_settings settings_buffer;
-    bool updates_to_send;
 public:
     Backplane();
 
