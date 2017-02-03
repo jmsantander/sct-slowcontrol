@@ -4,8 +4,8 @@
 
 // Codes for updating data and settings on backplane
 #define BP_NONE 0
-#define BP_VOLTAGES 1
-#define BP_CURRENTS 2
+#define FEE_VOLTAGES 1
+#define FEE_CURRENTS 2
 #define FEE_PRESENT 3
 #define BP_RESET_TRIGGER_AND_NSTIMER 4
 #define BP_SET_TRIGGER 5

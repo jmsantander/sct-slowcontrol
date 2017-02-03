@@ -60,13 +60,13 @@ int main(int argc, char *argv[])
         } else if (command.compare("v") == 0) {
             // Read FEE housekeeping voltages
             std::cout << "Read FEE voltages (V)." << std::endl;
-            new_settings = BP_VOLTAGES;
+            new_settings = FEE_VOLTAGES;
             update_and_send_settings(backplane, netinfo, new_settings,
                     settings_commands);
         } else if (command.compare("i") == 0) {
             // Read FEE currents
             std::cout << "Read FEE currents (A)." << std::endl;
-            new_settings = BP_CURRENTS;
+            new_settings = FEE_CURRENTS;
             update_and_send_settings(backplane, netinfo, new_settings,
                     settings_commands);
         } else if (command.compare("c") == 0) {

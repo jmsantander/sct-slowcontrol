@@ -250,9 +250,9 @@ void read_fee_data(int data_type, float fee_buffer[])
 
     // Define conversion factor from SPI readout to meaningful unit
     float cf = 1.0;
-    if (data_type == BP_VOLTAGES) {
+    if (data_type == FEE_VOLTAGES) {
         cf = VOLT_CONVERSION_FACTOR;
-    } else if (data_type == BP_CURRENTS) {
+    } else if (data_type == FEE_CURRENTS) {
         cf = AMP_CONVERSION_FACTOR;
     }
 	
@@ -270,9 +270,9 @@ void read_fee_data(int data_type, float fee_buffer[])
 	spi_message[10] = SPI_EOM_HKFPGA; // not used
 	
     sleep_msec(10);
-    if (data_type == BP_VOLTAGES) {
+    if (data_type == FEE_VOLTAGES) {
         spi_message[1] = CW_RD_FEE0_V;
-    } else if (data_type == BP_CURRENTS) {
+    } else if (data_type == FEE_CURRENTS) {
         spi_message[1] = CW_RD_FEE0_I;
     }
 	transfer_message(spi_message, data);
@@ -287,9 +287,9 @@ void read_fee_data(int data_type, float fee_buffer[])
 	fee_buffer[18] = data[9] * cf;
 		
 	sleep_msec(10);
-    if (data_type == BP_VOLTAGES) {
+    if (data_type == FEE_VOLTAGES) {
         spi_message[1] = CW_RD_FEE8_V;
-    } else if (data_type == BP_CURRENTS) {
+    } else if (data_type == FEE_CURRENTS) {
         spi_message[1] = CW_RD_FEE8_I;
     }
 	transfer_message(spi_message, data);
@@ -304,9 +304,9 @@ void read_fee_data(int data_type, float fee_buffer[])
 	fee_buffer[22] = data[9] * cf;
 	
 	sleep_msec(10);
-    if (data_type == BP_VOLTAGES) {
+    if (data_type == FEE_VOLTAGES) {
         spi_message[1] = CW_RD_FEE16_V;
-    } else if (data_type == BP_CURRENTS) {
+    } else if (data_type == FEE_CURRENTS) {
         spi_message[1] = CW_RD_FEE16_I;
     }
 	transfer_message(spi_message, data);
@@ -321,9 +321,9 @@ void read_fee_data(int data_type, float fee_buffer[])
 	fee_buffer[25] = data[9] * cf;
 	
 	sleep_msec(10);
-    if (data_type == BP_VOLTAGES) {
+    if (data_type == FEE_VOLTAGES) {
         spi_message[1] = CW_RD_FEE24_V;
-    } else if (data_type == BP_CURRENTS) {
+    } else if (data_type == FEE_CURRENTS) {
         spi_message[1] = CW_RD_FEE24_I;
     }
 	transfer_message(spi_message, data);

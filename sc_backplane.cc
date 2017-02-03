@@ -50,8 +50,8 @@ void Backplane::update_data(int requested_updates,
         unsigned short commands_for_request[], bool simulation_mode)
 {
     switch(requested_updates) {
-        case BP_VOLTAGES:
-        case BP_CURRENTS:
+        case FEE_VOLTAGES:
+        case FEE_CURRENTS:
         {
             float fee_buffer[N_FEES];
             if (!simulation_mode) {
@@ -60,10 +60,10 @@ void Backplane::update_data(int requested_updates,
                 simulate_fee_data(fee_buffer, N_FEES);
             }
             for (int i = 0; i < N_FEES; i++) {
-                if (requested_updates == BP_VOLTAGES) {
+                if (requested_updates == FEE_VOLTAGES) {
                     voltages_[i] = fee_buffer[i];
                     data_buffer.set_voltage(i, voltages_[i]);
-                } else if (requested_updates == BP_CURRENTS) {
+                } else if (requested_updates == FEE_CURRENTS) {
                     currents_[i] = fee_buffer[i];
                     data_buffer.set_current(i, currents_[i]);
                 }
@@ -298,14 +298,14 @@ void Backplane::print_data(int data_type)
             std::cout << std::endl;
             break;
         }
-        case BP_VOLTAGES:
-        case BP_CURRENTS:
+        case FEE_VOLTAGES:
+        case FEE_CURRENTS:
         {
             float *data_buffer; 
-            if (data_type == BP_VOLTAGES) {
+            if (data_type == FEE_VOLTAGES) {
                 std::cout << std::endl << "FEE voltages:" << std::endl;
                 data_buffer = voltages_;
-            } else if (data_type == BP_CURRENTS) {
+            } else if (data_type == FEE_CURRENTS) {
                 std::cout << std::endl << "FEE currents:" << std::endl;
                 data_buffer = currents_;
             }
