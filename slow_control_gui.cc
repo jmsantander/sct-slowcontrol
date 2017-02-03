@@ -95,6 +95,19 @@ int main(int argc, char *argv[])
             new_settings = BP_SET_TRIGGER;
             update_and_send_settings(backplane, netinfo, new_settings,
                     settings_commands);
+        } else if (command.compare("g") == 0) {
+            // Enable or disable trigger/TACK
+            std::cout << "Enable or disable trigger/TACK." << std::endl;
+            // Get commands from user
+            std::cout << "Enter En/Disable Triggers and TACKs in Hex\n"
+                << "(Bit 0 is Phase A logic, 1 Phase B, 2 Phase C, 3 Phase D\n"
+                << "Bit 4 is External Trigger\n" << "Bit 5 is TACK messages "
+                << "to TMs 0-15, 6 TMs 16-31): ";
+            std::cin >> std::hex >> settings_commands[0];
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            new_settings = BP_ENABLE_DISABLE_TRIGGER;
+            update_and_send_settings(backplane, netinfo, new_settings,
+                    settings_commands);
         } else if (command.compare("l") == 0) {
             // Reset trigger counter and timer
             std::cout << "Reset trigger counter and timer." << std::endl;

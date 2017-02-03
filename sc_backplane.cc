@@ -95,10 +95,15 @@ void Backplane::update_data(int requested_updates,
             break;
         }
         case BP_SET_TRIGGER:
+        case BP_ENABLE_DISABLE_TRIGGER:
         {
             unsigned short spi_data[11];
             if (!simulation_mode) {
-                set_trigger(commands_for_request, spi_data);
+                if (requested_updates == BP_SET_TRIGGER) {
+                    set_trigger(commands_for_request, spi_data);
+                } else if (requested_updates == BP_ENABLE_DISABLE_TRIGGER) {
+                    enable_disable_trigger(commands_for_request, spi_data);
+                }
             } else {
                 // simulate
                 for (int i = 0; i < N_SPI; i++) {
@@ -328,6 +333,7 @@ void Backplane::print_data(int data_type)
             break;
         }
         case BP_SET_TRIGGER:
+        case BP_ENABLE_DISABLE_TRIGGER:
         {
             display_spi_data(spi_data_);
             break;

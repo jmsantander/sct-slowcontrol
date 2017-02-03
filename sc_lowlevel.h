@@ -24,4 +24,8 @@ void read_nstimer_trigger_rate(unsigned long long &nstimer,
         unsigned long &tack_count, unsigned long &trigger_count,
         float &tack_rate, float &trigger_rate, unsigned short spi_data[]);
 
+// Enable or disable trigger
+void enable_disable_trigger(unsigned short spi_commands[],
+        unsigned short spi_data[]);
+
 #endif

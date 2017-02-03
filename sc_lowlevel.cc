@@ -362,7 +362,7 @@ void reset_trigger_and_nstimer()
 void set_trigger(unsigned short spi_commands[], unsigned short spi_data[])
 {
 	unsigned short spi_message[11];
-			
+    
     spi_message[0] = SPI_SOM_TFPGA; //som
 	spi_message[1] = SPI_SET_TRIG_AT_TIME; //cw
 	spi_message[2] = spi_commands[0];
@@ -382,7 +382,7 @@ void read_nstimer_trigger_rate(unsigned long long &nstimer,
         unsigned long &tack_count, unsigned long &trigger_count,
         float &tack_rate, float &trigger_rate, unsigned short spi_data[]) {
 	unsigned short spi_message[11];
-    
+   
     spi_message[0] = SPI_SOM_TFPGA; //som
     spi_message[1] = SPI_READ_nsTimer_TFPGA; //cw
     spi_message[2] = 0X0001;
@@ -407,4 +407,23 @@ void read_nstimer_trigger_rate(unsigned long long &nstimer,
 	trigger_count = ((spi_data[8] << 16) | spi_data[9]) - 1;
 	trigger_rate = (float) nstimer / 1000000000;
 	trigger_rate = trigger_count / trigger_rate;
+}
+
+// Enable or disable trigger
+void enable_disable_trigger(unsigned short spi_commands[],
+        unsigned short spi_data[]) {
+	unsigned short spi_message[11];
+
+    spi_message[0] = SPI_SOM_TFPGA; //som
+	spi_message[1] = SPI_L1_TRIGGER_EN; //cw
+	spi_message[2] = spi_commands[0];
+	spi_message[3] = 0x0002;
+	spi_message[4] = 0x0003;
+	spi_message[5] = 0x0004;
+	spi_message[6] = 0x0005;
+	spi_message[7] = 0x0006;
+	spi_message[8] = 0x0007;
+	spi_message[9] = 0x0008;			
+	spi_message[10] = SPI_EOM_TFPGA; //not used
+	transfer_message(spi_message, spi_data);
 }
