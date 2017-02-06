@@ -11,6 +11,7 @@
 #define BP_SET_TRIGGER 5
 #define BP_READ_NSTIMER_TRIGGER_RATE 6
 #define BP_ENABLE_DISABLE_TRIGGER 7
+#define BP_SET_HOLDOFF_TIME 8
 
 // Read in and store a command from the user from stdin
 // Return true if the command is valid, false otherwise

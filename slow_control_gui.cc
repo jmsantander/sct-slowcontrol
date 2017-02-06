@@ -114,6 +114,15 @@ int main(int argc, char *argv[])
             new_settings = BP_RESET_TRIGGER_AND_NSTIMER;
             update_and_send_settings(backplane, netinfo, new_settings,
                     settings_commands);
+        } else if (command.compare("o") == 0) {
+            // Set holdoff time
+            std::cout << "Set holdoff time." << std::endl;
+            std::cout << "Enter Hold Off in hex: ";
+            std::cin >> std::hex >> settings_commands[0];
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            new_settings = BP_SET_HOLDOFF_TIME;
+            update_and_send_settings(backplane, netinfo, new_settings,
+                    settings_commands);
         } else if (command.compare("x") == 0) {
             // Exit the GUI
             std::cout << "Exit." << std::endl;

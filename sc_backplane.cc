@@ -116,6 +116,15 @@ void Backplane::update_data(int requested_updates,
             }
             break;
         }
+        case BP_SET_HOLDOFF_TIME:
+        {
+            if (!simulation_mode) {
+                set_holdoff_time(commands_for_request);
+            } else {
+                std::cout << "Simulating setting holdoff time..." << std::endl;
+            }
+            break;
+        }
         case BP_READ_NSTIMER_TRIGGER_RATE:
         {
             unsigned long long nstimer = 0;
@@ -283,6 +292,8 @@ void Backplane::print_data(int data_type)
 {
     switch(data_type) {
         case BP_NONE:
+        case BP_RESET_TRIGGER_AND_NSTIMER:
+        case BP_SET_HOLDOFF_TIME:
             return;
         case FEE_PRESENT:
         {

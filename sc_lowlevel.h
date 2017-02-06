@@ -28,4 +28,7 @@ void read_nstimer_trigger_rate(unsigned long long &nstimer,
 void enable_disable_trigger(unsigned short spi_commands[],
         unsigned short spi_data[]);
 
+// Set holdoff time
+void set_holdoff_time(unsigned short spi_commands[]);
+
 #endif
