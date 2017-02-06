@@ -123,6 +123,35 @@ int main(int argc, char *argv[])
             new_settings = BP_SET_HOLDOFF_TIME;
             update_and_send_settings(backplane, netinfo, new_settings,
                     settings_commands);
+        } else if (command.compare("z") == 0) {
+            // Set TACK type and mode
+            std::cout << "Set TACK type and mode." << std::endl;
+            std::cout << "Enter Tack Type (0-3): ";
+            while (std::cin >> std::hex >> settings_commands[0]
+                    && settings_commands[0] > 3) { 
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(),
+                        '\n');
+                std::cout << "Not a valid entry." << std::endl;
+                std::cout << "Enter Tack Type (0-3): ";
+			}
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Enter Tack Mode (0-3): ";
+            while (std::cin >> std::hex >> settings_commands[1]
+                    && settings_commands[1] > 3) { 
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(),
+                        '\n');
+                std::cout << "Not a valid entry." << std::endl;
+                std::cout << "Enter Tack Mode (0-3): ";
+			}
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            
+            settings_commands[0] = ((settings_commands[0] << 2) |
+                    settings_commands[1]);
+            settings_commands[1] = 0;
+
+            new_settings = BP_SET_TACK_TYPE_AND_MODE;
+            update_and_send_settings(backplane, netinfo, new_settings,
+                    settings_commands);
         } else if (command.compare("x") == 0) {
             // Exit the GUI
             std::cout << "Exit." << std::endl;

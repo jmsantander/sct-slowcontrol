@@ -445,5 +445,25 @@ void set_holdoff_time(unsigned short spi_commands[])
     spi_message[8] = 0x0007;
     spi_message[9] = 0x0008;			
     spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message,data);
+    transfer_message(spi_message, data);
+}
+
+// Set TACK type and mode
+void set_tack_type_and_mode(unsigned short spi_commands[])
+{
+	unsigned short spi_message[11];
+	unsigned short data[11];
+    
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = SPI_SET_TACK_TYPE_MODE; //cw
+    spi_message[2] = spi_commands[0];
+    spi_message[3] = 0x0002;
+    spi_message[4] = 0x0003;
+    spi_message[5] = 0x0004;
+    spi_message[6] = 0x0005;
+    spi_message[7] = 0x0006;
+    spi_message[8] = 0x0007;
+    spi_message[9] = 0x0008;			
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, data);
 }

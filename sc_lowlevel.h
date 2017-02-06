@@ -31,4 +31,7 @@ void enable_disable_trigger(unsigned short spi_commands[],
 // Set holdoff time
 void set_holdoff_time(unsigned short spi_commands[]);
 
+// Set TACK type and mode
+void set_tack_type_and_mode(unsigned short spi_commands[]);
+
 #endif
