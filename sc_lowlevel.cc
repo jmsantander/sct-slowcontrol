@@ -126,14 +126,13 @@ unsigned short spi_tword(unsigned short write_word)
 */ 
 void transfer_message(unsigned short *message, unsigned short *pdata)
 {
-	unsigned short dummy_word;
 	unsigned short som_word;
 	unsigned short cmd_word;
 
 	// Write Start word
 	// By causality, nobody is in a state to send anything back on MISO
 	// so one reads a dummy word coming back from the slave to the master.
-	dummy_word = spi_tword(message[0]);
+	spi_tword(message[0]); // read a dummy word - AB
 	// Write command word
 	// word sent now that a specific SPI slave knows that the following
 	// command and data is meant for it.   The slave is one byte behind,
