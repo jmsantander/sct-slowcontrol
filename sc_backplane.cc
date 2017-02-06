@@ -118,12 +118,15 @@ void Backplane::update_data(int requested_updates,
         }
         case BP_SET_HOLDOFF_TIME:
         case BP_SET_TACK_TYPE_AND_MODE:
+        case BP_POWER_CONTROL_MODULES:
         {
             if (!simulation_mode) {
                 if (requested_updates == BP_SET_HOLDOFF_TIME) {
                     set_holdoff_time(commands_for_request);
                 } else if (requested_updates == BP_SET_TACK_TYPE_AND_MODE) {
                     set_tack_type_and_mode(commands_for_request);
+                } else if (requested_updates == BP_POWER_CONTROL_MODULES) {
+                    power_control_modules(commands_for_request);
                 }
             } else {
                 if (requested_updates == BP_SET_HOLDOFF_TIME) {
@@ -131,6 +134,9 @@ void Backplane::update_data(int requested_updates,
                         << std::endl;
                 } else if (requested_updates == BP_SET_TACK_TYPE_AND_MODE) {
                     std::cout << "Simulating setting TACK type and mode..."
+                        << std::endl;
+                } else if (requested_updates == BP_POWER_CONTROL_MODULES) {
+                    std::cout << "Simulating turning FEEs on and off..."
                         << std::endl;
                 }
             }
@@ -306,6 +312,7 @@ void Backplane::print_data(int data_type)
         case BP_RESET_TRIGGER_AND_NSTIMER:
         case BP_SET_HOLDOFF_TIME:
         case BP_SET_TACK_TYPE_AND_MODE:
+        case BP_POWER_CONTROL_MODULES:
             return;
         case FEE_PRESENT:
         {

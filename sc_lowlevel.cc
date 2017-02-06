@@ -467,3 +467,23 @@ void set_tack_type_and_mode(unsigned short spi_commands[])
     spi_message[10] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_message, data);
 }
+
+// Turn FEEs on and off
+void power_control_modules(unsigned short spi_commands[])
+{
+	unsigned short spi_message[11];
+	unsigned short data[11];
+    
+    spi_message[0] = SPI_SOM_HKFPGA; //som
+    spi_message[1] = CW_FEE_POWER_CTL; //cw
+    spi_message[2] = spi_commands[0];
+    spi_message[3] = spi_commands[1];
+    spi_message[4] = 0x2333;
+    spi_message[5] = 0x3444;
+    spi_message[6] = 0x4555;
+    spi_message[7] = 0x5666;
+    spi_message[8] = 0x6777;
+    spi_message[9] = 0x7888;			
+    spi_message[10] = SPI_EOM_HKFPGA; //not used
+    transfer_message(spi_message, data);
+}

@@ -34,4 +34,7 @@ void set_holdoff_time(unsigned short spi_commands[]);
 // Set TACK type and mode
 void set_tack_type_and_mode(unsigned short spi_commands[]);
 
+// Turn FEEs on and off
+void power_control_modules(unsigned short spi_commands[]);
+
 #endif

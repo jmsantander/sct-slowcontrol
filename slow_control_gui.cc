@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     std::string command, value;
     int new_settings = BP_NONE;
     unsigned short settings_commands[N_COMMANDS] = {};
+    unsigned long fee_power = 0; // for 'n' command to power control FEEs
     while (true) {
         // Reinitialize settings values to defaults
         new_settings = BP_NONE;
@@ -112,6 +113,18 @@ int main(int argc, char *argv[])
             // Reset trigger counter and timer
             std::cout << "Reset trigger counter and timer." << std::endl;
             new_settings = BP_RESET_TRIGGER_AND_NSTIMER;
+            update_and_send_settings(backplane, netinfo, new_settings,
+                    settings_commands);
+        } else if (command.compare("n") == 0) {
+            // Power modules on and off
+            std::cout << "Power control modules." << std::endl;
+            std::cout << "Enter FEEs to Power ON/OFF (32 bits 0=off 1=on) "
+                << "0-0xFFFFFFFF: ";
+            std::cin >> std::hex >> fee_power;
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			settings_commands[0] = fee_power >> 16;
+            settings_commands[1] = fee_power & 0x0000ffff;
+            new_settings = BP_POWER_CONTROL_MODULES;
             update_and_send_settings(backplane, netinfo, new_settings,
                     settings_commands);
         } else if (command.compare("o") == 0) {
