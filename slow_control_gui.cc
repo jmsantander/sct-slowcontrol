@@ -136,6 +136,12 @@ int main(int argc, char *argv[])
             new_settings = BP_SET_HOLDOFF_TIME;
             update_and_send_settings(backplane, netinfo, new_settings,
                     settings_commands);
+        } else if (command.compare("s") == 0) {
+            // Send sync command
+            std::cout << "Send sync command." << std::endl;
+            new_settings = BP_SYNC;
+            update_and_send_settings(backplane, netinfo, new_settings,
+                    settings_commands);
         } else if (command.compare("z") == 0) {
             // Set TACK type and mode
             std::cout << "Set TACK type and mode." << std::endl;

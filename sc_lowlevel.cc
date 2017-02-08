@@ -486,3 +486,58 @@ void power_control_modules(unsigned short spi_commands[])
     spi_message[10] = SPI_EOM_HKFPGA; //not used
     transfer_message(spi_message, data);
 }
+
+// Send sync commands
+void sync()
+{
+	unsigned short spi_message[11];
+	unsigned short data[11];
+    
+    // Setup SYNC message.
+    // Must do a SYNC before TAACK messages will be effective
+    /* If Target module has already been synced, sending a SYNC message will
+     * have no effect */
+    // Set TYPE (01) and MODE (00) for a SYNC
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = SPI_SET_TACK_TYPE_MODE; //cw
+    spi_message[2] = 0x0004; // TYPE 01 MODE 00
+    spi_message[3] = 0x0000;
+    spi_message[4] = 0x0000;
+    spi_message[5] = 0x0000;
+    spi_message[6] = 0x0000;
+    spi_message[7] = 0x0000;
+    spi_message[8] = 0x0000;
+    spi_message[9] = 0x0000;			
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, data);
+    
+    // Set a time to send the SYNC message
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = SPI_SET_TRIG_AT_TIME; //cw
+    spi_message[2] = 0x0000;
+    spi_message[3] = 0x0000;
+    spi_message[4] = 0x0001; // A short time after 0
+    spi_message[5] = 0x0004; //RichW0x0000;
+    // ?? Need a 4 because time in message ends up one tick behind
+    // A bug to be investigated in the TFPGA gate array HDL.
+    // Also the time has to have 3 LSBs 000
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, data);
+    
+    // Reset the nsTimer to 0
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, data);
+    
+    // The TFPGA will send the SYNC message when nsTimer reaches the time set
+    // above
+    
+    // Set TYPE and MODE back in anticipation of sending a TACK
+    // Setting TYPE (00) and MODE (00) so subsequent message are TACKs
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = SPI_SET_TACK_TYPE_MODE; //cw
+    spi_message[2] = 0x0000; // TYPE 00 MODE 00
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, data);
+}

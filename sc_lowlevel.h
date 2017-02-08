@@ -37,4 +37,7 @@ void set_tack_type_and_mode(unsigned short spi_commands[]);
 // Turn FEEs on and off
 void power_control_modules(unsigned short spi_commands[]);
 
+// Send sync commands
+void sync();
+
 #endif

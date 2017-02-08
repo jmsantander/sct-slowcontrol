@@ -84,16 +84,6 @@ void Backplane::update_data(int requested_updates,
             }
             break;
         }
-        case BP_RESET_TRIGGER_AND_NSTIMER:
-        {
-            if (!simulation_mode) {
-                reset_trigger_and_nstimer();
-            } else {
-                std::cout << "Simulating resetting trigger and nstimer..."
-                    << std::endl;
-            }
-            break;
-        }
         case BP_SET_TRIGGER:
         case BP_ENABLE_DISABLE_TRIGGER:
         {
@@ -116,12 +106,18 @@ void Backplane::update_data(int requested_updates,
             }
             break;
         }
+        case BP_RESET_TRIGGER_AND_NSTIMER:
+        case BP_SYNC:
         case BP_SET_HOLDOFF_TIME:
         case BP_SET_TACK_TYPE_AND_MODE:
         case BP_POWER_CONTROL_MODULES:
         {
             if (!simulation_mode) {
-                if (requested_updates == BP_SET_HOLDOFF_TIME) {
+                if (requested_updates == BP_RESET_TRIGGER_AND_NSTIMER) {
+                    reset_trigger_and_nstimer();
+                } else if (requested_updates == BP_SYNC) {
+                    sync();
+                } else if (requested_updates == BP_SET_HOLDOFF_TIME) {
                     set_holdoff_time(commands_for_request);
                 } else if (requested_updates == BP_SET_TACK_TYPE_AND_MODE) {
                     set_tack_type_and_mode(commands_for_request);
@@ -129,7 +125,12 @@ void Backplane::update_data(int requested_updates,
                     power_control_modules(commands_for_request);
                 }
             } else {
-                if (requested_updates == BP_SET_HOLDOFF_TIME) {
+                if (requested_updates == BP_RESET_TRIGGER_AND_NSTIMER) {
+                    std::cout << "Simulating resetting trigger and nstimer..."
+                        << std::endl;
+                } else if (requested_updates == BP_SYNC) {
+                    std::cout << "Simulating syncing..." << std::endl;
+                } else if (requested_updates == BP_SET_HOLDOFF_TIME) {
                     std::cout << "Simulating setting holdoff time..."
                         << std::endl;
                 } else if (requested_updates == BP_SET_TACK_TYPE_AND_MODE) {
@@ -310,6 +311,7 @@ void Backplane::print_data(int data_type)
     switch(data_type) {
         case BP_NONE:
         case BP_RESET_TRIGGER_AND_NSTIMER:
+        case BP_SYNC:
         case BP_SET_HOLDOFF_TIME:
         case BP_SET_TACK_TYPE_AND_MODE:
         case BP_POWER_CONTROL_MODULES:
