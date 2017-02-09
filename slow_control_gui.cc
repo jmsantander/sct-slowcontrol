@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
                     settings_commands);
         } else if (command.compare("n") == 0) {
             // Power modules on and off
-            std::cout << "Power control modules." << std::endl;
+            std::cout << "Power on/off modules." << std::endl;
             std::cout << "Enter FEEs to Power ON/OFF (32 bits 0=off 1=on) "
                 << "0-0xFFFFFFFF: ";
             std::cin >> std::hex >> fee_power;
@@ -177,6 +177,25 @@ int main(int argc, char *argv[])
             new_settings = BP_SET_TACK_TYPE_AND_MODE;
             update_and_send_settings(backplane, netinfo, new_settings,
                     settings_commands);
+        } else if (command.compare("m") == 0) {
+            // Display menu
+            std::cout << "MENU" << std::endl;
+            std::cout << "  c    [ Monitor trigger rate ]" << std::endl;
+            std::cout << "  d    [ Set trigger at time ]" << std::endl;
+            std::cout << "  g    [ Enable or disable trigger/TACK ]" 
+                << std::endl;
+            std::cout << "  i    [ Read FEE currents ]" << std::endl;
+            std::cout << "  j    [ Set trigger mask ]" << std::endl;
+            std::cout << "  l    [ Reset trigger counter and timer ]"
+                << std::endl;
+            std::cout << "  m    [ Display menu ]" << std::endl;
+            std::cout << "  n    [ Power on/off modules ]" << std::endl;
+            std::cout << "  o    [ Set holdoff time ]" << std::endl;
+            std::cout << "  p    [ Read FEEs present ]" << std::endl;
+            std::cout << "  s    [ Send sync command ]" << std::endl;
+            std::cout << "  v    [ Read FEE voltages ]" << std::endl;
+            std::cout << "  x    [ Exit \"GUI\" ]" << std::endl;
+            std::cout << "  z    [ Set TACK type and mode ]" << std::endl;
         } else if (command.compare("x") == 0) {
             // Exit the GUI
             std::cout << "Exit." << std::endl;
