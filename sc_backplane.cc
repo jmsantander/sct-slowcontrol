@@ -24,6 +24,8 @@ Backplane::Backplane()
         data_buffer.add_current(0.0);
         present_[i] = 0;
         data_buffer.add_present(0);
+        trigger_mask_[i] = 0;
+        data_buffer.add_trigger_mask(0);
     }
 
     for (int i = 0; i < N_SPI; i++) {
@@ -81,6 +83,20 @@ void Backplane::update_data(int requested_updates,
             for (int i = 0; i < N_FEES; i++) {
                 present_[i] = fees_present[i];
                 data_buffer.set_present(i, present_[i]);
+            }
+            break;
+        }
+        case BP_SET_TRIGGER_MASK:
+        {
+            unsigned short trigger_mask[N_FEES];
+            if (!simulation_mode) {
+                set_trigger_mask(trigger_mask);
+            } else {
+                simulate_trigger_mask(trigger_mask, N_FEES);
+            }
+            for (int i = 0; i < N_FEES; i++) {
+                trigger_mask_[i] = trigger_mask[i];
+                data_buffer.set_trigger_mask(i, trigger_mask_[i]);
             }
             break;
         }
@@ -274,6 +290,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                         voltages_[i] = data_buffer.voltage(i);
                         currents_[i] = data_buffer.current(i);
                         present_[i] = data_buffer.present(i);
+                        trigger_mask_[i] = data_buffer.trigger_mask(i);
                     }
                     for (int i = 0; i < N_SPI; i++) {
                         spi_data_[i] = data_buffer.spi_data(i);
@@ -318,7 +335,7 @@ void Backplane::print_data(int data_type)
             return;
         case FEE_PRESENT:
         {
-           for (int i = 0; i < N_FEES; i++) {
+            for (int i = 0; i < N_FEES; i++) {
                 if (i == 0 || i == 28) {
                     std::cout << "   " << std::setw(2) << present_[i] 
                         << " ";
@@ -333,6 +350,29 @@ void Backplane::print_data(int data_type)
                 }
             }
             std::cout << std::endl;
+            break;
+        }
+        case BP_SET_TRIGGER_MASK:
+        {
+            std::cout << std::setfill('0');
+            for (int i = 0; i < N_FEES; i++) {
+                if (i == 0 || i == 28) {
+                    std::cout << "     " << std::hex << std::setw(4)
+                        << trigger_mask_[i] << " ";
+                } else if (i == 3 || i == 31) {
+                    std::cout << std::hex << std::setw(4) 
+                        << trigger_mask_[i] << "     ";
+                } else {
+                    std::cout << std::hex << std::setw(4) << trigger_mask_[i]
+                        << " ";
+                }
+                if (i == 3 || i == 9 || i == 15 || i == 21 || i == 27 || 
+                        i == 31) {
+                    std::cout << std::endl;
+                }
+            }
+            std::cout << std::endl;
+            std::cout << std::setfill(' '); // clear fill
             break;
         }
         case FEE_VOLTAGES:

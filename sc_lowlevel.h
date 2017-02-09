@@ -40,4 +40,7 @@ void power_control_modules(unsigned short spi_commands[]);
 // Send sync commands
 void sync();
 
+// Set trigger mask
+void set_trigger_mask(unsigned short trigger_mask[]);
+
 #endif

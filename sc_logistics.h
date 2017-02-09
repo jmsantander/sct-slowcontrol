@@ -15,6 +15,7 @@
 #define BP_SET_TACK_TYPE_AND_MODE 9
 #define BP_POWER_CONTROL_MODULES 10
 #define BP_SYNC 11
+#define BP_SET_TRIGGER_MASK 12
 
 // Read in and store a command from the user from stdin
 // Return true if the command is valid, false otherwise
@@ -28,6 +29,9 @@ void simulate_fee_data(float fee_buffer[], const int n_fees);
 
 // Simulate reading FEEs present, for testing without a real Pi
 void simulate_fees_present(unsigned short fees_present[], const int n_fees);
+
+// Simulate setting the trigger mask, for testing without a real Pi
+void simulate_trigger_mask(unsigned short trigger_mask[], const int n_fees);
 
 // Display SPI data
 void display_spi_data(unsigned short spi_data[]);

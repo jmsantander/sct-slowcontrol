@@ -4,6 +4,7 @@
 // written by Phil Moore and Richard Bose. 
 
 #include <cstdlib>
+#include <cstdio>
 #include "bcm2835.h" // Driver for SPI chip
 #include "sc_logistics.h"
 
@@ -540,4 +541,84 @@ void sync()
     spi_message[2] = 0x0000; // TYPE 00 MODE 00
     spi_message[10] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_message, data);
+}
+
+// Set trigger mask
+void set_trigger_mask(unsigned short trigger_mask[])
+{
+	unsigned short spi_message[11];
+	unsigned short data[11];
+    unsigned short trigger_mask_commands[32];
+    
+    // Setting Trigger Mask from file trigger_mask
+    FILE *myfile;
+    myfile = fopen("trigger_mask", "r");
+    for(int i = 0; i < 32; i++) {
+        fscanf(myfile, "%hx", &trigger_mask_commands[i]);
+    }
+    fclose(myfile);
+    
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = SPI_TRIGGERMASK_TFPGA; //cw
+    spi_message[2] = trigger_mask_commands[0];
+    spi_message[3] = trigger_mask_commands[1];
+    spi_message[4] = trigger_mask_commands[2];
+    spi_message[5] = trigger_mask_commands[3];
+    spi_message[6] = trigger_mask_commands[4];
+    spi_message[7] = trigger_mask_commands[5];
+    spi_message[8] = trigger_mask_commands[6];
+    spi_message[9] = trigger_mask_commands[7];			
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, data);
+    for (int i = 0; i < 8; i++) {
+        trigger_mask[i] = data[i + 2];
+    }
+
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = SPI_TRIGGERMASK1_TFPGA; //cw
+    spi_message[2] = trigger_mask_commands[8];
+    spi_message[3] = trigger_mask_commands[9];
+    spi_message[4] = trigger_mask_commands[10];
+    spi_message[5] = trigger_mask_commands[11];
+    spi_message[6] = trigger_mask_commands[12];
+    spi_message[7] = trigger_mask_commands[13];
+    spi_message[8] = trigger_mask_commands[14];
+    spi_message[9] = trigger_mask_commands[15];			
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, data);
+    for (int i = 0; i < 8; i++) {
+        trigger_mask[i + 8] = data[i + 2];
+    }
+    
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = SPI_TRIGGERMASK2_TFPGA; //cw
+    spi_message[2] = trigger_mask_commands[16];
+    spi_message[3] = trigger_mask_commands[17];
+    spi_message[4] = trigger_mask_commands[18];
+    spi_message[5] = trigger_mask_commands[19];
+    spi_message[6] = trigger_mask_commands[20];
+    spi_message[7] = trigger_mask_commands[21];
+    spi_message[8] = trigger_mask_commands[22];
+    spi_message[9] = trigger_mask_commands[23];			
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, data);
+    for (int i = 0; i < 8; i++) {
+        trigger_mask[i + 16] = data[i + 2];
+    }
+    
+    spi_message[0] = SPI_SOM_TFPGA; //som
+    spi_message[1] = SPI_TRIGGERMASK3_TFPGA; //cw
+    spi_message[2] = trigger_mask_commands[24];
+    spi_message[3] = trigger_mask_commands[25];
+    spi_message[4] = trigger_mask_commands[26];
+    spi_message[5] = trigger_mask_commands[27];
+    spi_message[6] = trigger_mask_commands[28];
+    spi_message[7] = trigger_mask_commands[29];
+    spi_message[8] = trigger_mask_commands[30];
+    spi_message[9] = trigger_mask_commands[31];			
+    spi_message[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_message, data);
+    for (int i = 0; i < 8; i++) {
+        trigger_mask[i + 24] = data[i + 2];
+    }
 }

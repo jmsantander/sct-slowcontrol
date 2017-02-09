@@ -109,6 +109,12 @@ int main(int argc, char *argv[])
             new_settings = BP_ENABLE_DISABLE_TRIGGER;
             update_and_send_settings(backplane, netinfo, new_settings,
                     settings_commands);
+        } else if (command.compare("j") == 0) {
+            // Set trigger mask
+            std::cout << "Set trigger mask." << std::endl;
+            new_settings = BP_SET_TRIGGER_MASK;
+            update_and_send_settings(backplane, netinfo, new_settings,
+                    settings_commands);
         } else if (command.compare("l") == 0) {
             // Reset trigger counter and timer
             std::cout << "Reset trigger counter and timer." << std::endl;
