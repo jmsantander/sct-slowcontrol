@@ -1,4 +1,4 @@
-// slow_control_gui.cc
+// slow_control_interface.cc
 // Receive data from and transmit settings to the server
 
 #include <iostream>
@@ -10,20 +10,11 @@
 #include "sc_backplane.h"
 #include "sc_logistics.h"
 
-// Convenience function to update backplane with new requested settings and
-// synchronizing them over the network
-void update_and_send_settings(Backplane &backplane, Network_info &netinfo, 
-        int new_settings, unsigned short settings_commands[])
-{
-    backplane.update_settings(new_settings, settings_commands);
-    backplane.synchronize_network(netinfo);
-}
-
 int main(int argc, char *argv[])
 {
     // Parse command line arguments
     if (argc != 2) {
-        std::cerr << "usage: slow_control_gui hostname" << std::endl;
+        std::cerr << "usage: slow_control_interface hostname" << std::endl;
         return 1;
     }
     std::string hostname = argv[1];
@@ -56,26 +47,18 @@ int main(int argc, char *argv[])
             // Read if FEEs present
             std::cout << "Read FEEs present." << std::endl;
             new_settings = FEE_PRESENT;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("v") == 0) {
             // Read FEE housekeeping voltages
             std::cout << "Read FEE voltages (V)." << std::endl;
             new_settings = FEE_VOLTAGES;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("i") == 0) {
             // Read FEE currents
             std::cout << "Read FEE currents (A)." << std::endl;
             new_settings = FEE_CURRENTS;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("c") == 0) {
             // Monitor trigger rate
             std::cout << "Monitor trigger rate." << std::endl;
             new_settings = BP_READ_NSTIMER_TRIGGER_RATE;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("d") == 0) {
             // Set trigger at time
             std::cout << "Set trigger at time." << std::endl;
@@ -94,8 +77,6 @@ int main(int argc, char *argv[])
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cout << std::endl;
             new_settings = BP_SET_TRIGGER;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("g") == 0) {
             // Enable or disable trigger/TACK
             std::cout << "Enable or disable trigger/TACK." << std::endl;
@@ -107,20 +88,14 @@ int main(int argc, char *argv[])
             std::cin >> std::hex >> settings_commands[0];
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             new_settings = BP_ENABLE_DISABLE_TRIGGER;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("j") == 0) {
             // Set trigger mask
             std::cout << "Set trigger mask." << std::endl;
             new_settings = BP_SET_TRIGGER_MASK;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("l") == 0) {
             // Reset trigger counter and timer
             std::cout << "Reset trigger counter and timer." << std::endl;
             new_settings = BP_RESET_TRIGGER_AND_NSTIMER;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("n") == 0) {
             // Power modules on and off
             std::cout << "Power on/off modules." << std::endl;
@@ -131,8 +106,6 @@ int main(int argc, char *argv[])
 			settings_commands[0] = fee_power >> 16;
             settings_commands[1] = fee_power & 0x0000ffff;
             new_settings = BP_POWER_CONTROL_MODULES;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("o") == 0) {
             // Set holdoff time
             std::cout << "Set holdoff time." << std::endl;
@@ -140,14 +113,10 @@ int main(int argc, char *argv[])
             std::cin >> std::hex >> settings_commands[0];
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             new_settings = BP_SET_HOLDOFF_TIME;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("s") == 0) {
             // Send sync command
             std::cout << "Send sync command." << std::endl;
             new_settings = BP_SYNC;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("z") == 0) {
             // Set TACK type and mode
             std::cout << "Set TACK type and mode." << std::endl;
@@ -175,8 +144,6 @@ int main(int argc, char *argv[])
             settings_commands[1] = 0;
 
             new_settings = BP_SET_TACK_TYPE_AND_MODE;
-            update_and_send_settings(backplane, netinfo, new_settings,
-                    settings_commands);
         } else if (command.compare("m") == 0) {
             // Display menu
             std::cout << "MENU" << std::endl;
@@ -194,8 +161,9 @@ int main(int argc, char *argv[])
             std::cout << "  p    [ Read FEEs present ]" << std::endl;
             std::cout << "  s    [ Send sync command ]" << std::endl;
             std::cout << "  v    [ Read FEE voltages ]" << std::endl;
-            std::cout << "  x    [ Exit \"GUI\" ]" << std::endl;
+            std::cout << "  x    [ Exit user interface ]" << std::endl;
             std::cout << "  z    [ Set TACK type and mode ]" << std::endl;
+            continue;
         } else if (command.compare("x") == 0) {
             // Exit the GUI
             std::cout << "Exit." << std::endl;
@@ -209,6 +177,9 @@ int main(int argc, char *argv[])
             std::cout << "Command not recognized." << std::endl;
             continue;
         }
+        // Update and send settings
+        backplane.update_settings(new_settings, settings_commands);
+        backplane.synchronize_network(netinfo);
         // Get results of command
         sleep_msec(100);
         backplane.synchronize_network(netinfo);
