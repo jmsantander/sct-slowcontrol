@@ -22,9 +22,14 @@ int main(int argc, char *argv[])
     Backplane backplane;
     bool simulation_mode = false;
     if (!backplane.pi_initialize_lowlevel()) {
-        std::cout << "warning: could not initialize low level backplane" 
-            << "- switching to simulation mode" << std::endl;
-        simulation_mode = true;
+        // Enable these lines to quit - for normal use
+        std::cout << "error: could not initialize low level backplane "
+            << "- exiting" << std::endl;
+        return 1;
+        // Enable these lines to switch to simulation mode - for testing
+        //std::cout << "warning: could not initialize low level backplane " 
+        //    << "- switching to simulation mode" << std::endl;
+        //simulation_mode = true;
     }
     
     // Set up networking info
