@@ -20,6 +20,7 @@
 #include <algorithm>
 
 #include "sc_network.h"
+#include "sc_logistics.h"
 
 #define PI_PORT "31415" // the port Pi will connect to server on
 #define GUI_PORT "51413" // the port GUI will connect to server on
@@ -563,7 +564,9 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
                                 } else {
                                     // Successfully sent the message
                                     iter_gui->send_status = MSG_DONE;
-                                    std::cout << "Sent Pi->GUI\n"; //TESTING
+                                    // Log message
+                                    log_message(iter_pi->message,
+                                            LO_DATA_MESSAGE);
                                 }
                             }
                             // Send settings from GUI to Pi only if both ready
@@ -577,7 +580,9 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
                                 } else {
                                     // Successfully sent the message
                                     iter_pi->send_status = MSG_DONE;
-                                    std::cout << "Sent GUI->Pi\n"; //TESTING
+                                    // Log message
+                                    log_message(iter_gui->message,
+                                            LO_SETTINGS_MESSAGE);
                                 }
                             }
                         }

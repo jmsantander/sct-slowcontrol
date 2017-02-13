@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "sc_logistics.h"
+#include "sc_protobuf.pb.h"
 
 // Split a string into component words using the specified delimiter
 void split(const std::string &s, char delim, std::vector<std::string> &words)
@@ -98,4 +99,22 @@ void display_spi_data(unsigned short spi_data[])
     std::cout << "\033[1;34m" << std::hex << std::setw(4) << spi_data[10]
         << "\033[0m " << std::endl << std::endl;
     std::cout << std::setfill(' '); // clear fill
+}
+                                    
+// Log a message
+void log_message(std::string message, int message_type)
+{
+    if (message_type == LO_DATA_MESSAGE) {
+        std::cout << "Sent Pi->GUI" << std::endl;
+        slow_control::Backplane_data data_buffer;
+    } else if (message_type == LO_SETTINGS_MESSAGE) {
+        std::cout << "Sent GUI->Pi" << std::endl;
+        slow_control::Backplane_settings settings;
+        if (!settings.ParseFromString(message)) {
+            std::cerr << "Warning: could not parse settings message\n";
+            return;
+        }
+        std::cout << "The command code is " << settings.requested_updates()
+            << std::endl;
+    }
 }
