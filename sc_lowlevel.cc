@@ -168,42 +168,174 @@ void transfer_message(unsigned short *message, unsigned short *pdata)
 
 void trig_adcs()
 {
-	unsigned short spi_message[11];
+	unsigned short spi_command[11];
 	unsigned short data[11];
 	
-	spi_message[0] = SPI_SOM_HKFPGA; // som
-	spi_message[1] = CW_TRG_ADCS; // cw
-	spi_message[2] = 0x0111;
-	spi_message[3] = 0x1222;
-	spi_message[4] = 0x2333;
-	spi_message[5] = 0x3444;
-	spi_message[6] = 0x4555;
-	spi_message[7] = 0x5666;
-	spi_message[8] = 0x0000;
-	spi_message[9] = 0x0088;
-	spi_message[10] = SPI_EOM_HKFPGA; // not used
-	transfer_message(spi_message, data);// trig ADCs
+	spi_command[0] = SPI_SOM_HKFPGA; // som
+	spi_command[1] = CW_TRG_ADCS; // cw
+	spi_command[2] = 0x0111;
+	spi_command[3] = 0x1222;
+	spi_command[4] = 0x2333;
+	spi_command[5] = 0x3444;
+	spi_command[6] = 0x4555;
+	spi_command[7] = 0x5666;
+	spi_command[8] = 0x0000;
+	spi_command[9] = 0x0088;
+	spi_command[10] = SPI_EOM_HKFPGA; // not used
+	transfer_message(spi_command, data);// trig ADCs
 	delay(100);
+}
+
+// Enable or disable trigger
+void enable_disable_trigger(unsigned short command_parameters[],
+        unsigned short spi_command[], unsigned short spi_data[])
+{
+    spi_command[0] = SPI_SOM_TFPGA; //som
+	spi_command[1] = SPI_L1_TRIGGER_EN; //cw
+	spi_command[2] = command_parameters[0];
+	spi_command[3] = 0x0002;
+	spi_command[4] = 0x0003;
+	spi_command[5] = 0x0004;
+	spi_command[6] = 0x0005;
+	spi_command[7] = 0x0006;
+	spi_command[8] = 0x0007;
+	spi_command[9] = 0x0008;			
+	spi_command[10] = SPI_EOM_TFPGA; //not used
+	transfer_message(spi_command, spi_data);
+}
+
+// Turn FEEs on and off
+void power_control_modules(unsigned short command_parameters[],
+        unsigned short spi_command[], unsigned short spi_data[])
+{
+    spi_command[0] = SPI_SOM_HKFPGA; //som
+    spi_command[1] = CW_FEE_POWER_CTL; //cw
+    spi_command[2] = command_parameters[0];
+    spi_command[3] = command_parameters[1];
+    spi_command[4] = 0x2333;
+    spi_command[5] = 0x3444;
+    spi_command[6] = 0x4555;
+    spi_command[7] = 0x5666;
+    spi_command[8] = 0x6777;
+    spi_command[9] = 0x7888;			
+    spi_command[10] = SPI_EOM_HKFPGA; //not used
+    transfer_message(spi_command, spi_data);
+}
+
+// Read in and store FEE housekeeping data
+void read_fee_data(int data_type, float fee_buffer[])
+{
+	unsigned short data[11];
+	unsigned short spi_command[11];
+
+    // Define conversion factor from SPI readout to meaningful unit
+    float cf = 1.0;
+    if (data_type == FEE_VOLTAGES) {
+        cf = VOLT_CONVERSION_FACTOR;
+    } else if (data_type == FEE_CURRENTS) {
+        cf = AMP_CONVERSION_FACTOR;
+    }
+	
+    trig_adcs();
+	
+	spi_command[0] = SPI_SOM_HKFPGA; // som
+	spi_command[2] = 0x0111;
+	spi_command[3] = 0x1222;
+	spi_command[4] = 0x2333;
+	spi_command[5] = 0x3444;
+	spi_command[6] = 0x4555;
+	spi_command[7] = 0x5666;
+	spi_command[8] = 0x0000;
+	spi_command[9] = 0x0088;	
+	spi_command[10] = SPI_EOM_HKFPGA; // not used
+	
+    sleep_msec(10);
+    if (data_type == FEE_VOLTAGES) {
+        spi_command[1] = CW_RD_FEE0_V;
+    } else if (data_type == FEE_CURRENTS) {
+        spi_command[1] = CW_RD_FEE0_I;
+    }
+	transfer_message(spi_command, data);
+	
+    fee_buffer[5]  = data[2] * cf;
+	fee_buffer[12] = data[3] * cf;
+	fee_buffer[6]  = data[4] * cf;
+	fee_buffer[17] = data[5] * cf;
+	fee_buffer[7]  = data[6] * cf;
+	fee_buffer[13] = data[7] * cf;
+	fee_buffer[11] = data[8] * cf;
+	fee_buffer[18] = data[9] * cf;
+		
+	sleep_msec(10);
+    if (data_type == FEE_VOLTAGES) {
+        spi_command[1] = CW_RD_FEE8_V;
+    } else if (data_type == FEE_CURRENTS) {
+        spi_command[1] = CW_RD_FEE8_I;
+    }
+	transfer_message(spi_command, data);
+	
+    fee_buffer[4]  = data[2] * cf;
+	fee_buffer[10] = data[3] * cf;
+	fee_buffer[1]  = data[4] * cf;
+	fee_buffer[0]  = data[5] * cf;
+	fee_buffer[3]  = data[6] * cf;
+	fee_buffer[2]  = data[7] * cf;
+	fee_buffer[16] = data[8] * cf;
+	fee_buffer[22] = data[9] * cf;
+	
+	sleep_msec(10);
+    if (data_type == FEE_VOLTAGES) {
+        spi_command[1] = CW_RD_FEE16_V;
+    } else if (data_type == FEE_CURRENTS) {
+        spi_command[1] = CW_RD_FEE16_I;
+    }
+	transfer_message(spi_command, data);
+
+    fee_buffer[28] = data[2] * cf;
+	fee_buffer[24] = data[3] * cf;
+	fee_buffer[30] = data[4] * cf;
+	fee_buffer[23] = data[5] * cf;
+	fee_buffer[31] = data[6] * cf;
+	fee_buffer[29] = data[7] * cf;
+	fee_buffer[26] = data[8] * cf;
+	fee_buffer[25] = data[9] * cf;
+	
+	sleep_msec(10);
+    if (data_type == FEE_VOLTAGES) {
+        spi_command[1] = CW_RD_FEE24_V;
+    } else if (data_type == FEE_CURRENTS) {
+        spi_command[1] = CW_RD_FEE24_I;
+    }
+	transfer_message(spi_command, data);
+	
+    fee_buffer[20] = data[2] * cf;
+	fee_buffer[8]  = data[3] * cf;
+	fee_buffer[27] = data[4] * cf;
+	fee_buffer[15] = data[5] * cf;
+	fee_buffer[9]  = data[6] * cf;
+	fee_buffer[19] = data[7] * cf;
+	fee_buffer[21] = data[8] * cf;
+	fee_buffer[14] = data[9] * cf;
 }
 
 // Determine which FEEs are present
 void read_fees_present(unsigned short fees_present[])
 {
-    unsigned short spi_message[11];
+    unsigned short spi_command[11];
     unsigned short data[11];
 
-    spi_message[0] = SPI_SOM_HKFPGA; // som
-    spi_message[1] = CW_FEEs_PRESENT; // cw
-    spi_message[2] = 0x0111;
-    spi_message[3] = 0x1222;
-    spi_message[4] = 0x2333;
-    spi_message[5] = 0x3444;
-    spi_message[6] = 0x4555;
-    spi_message[7] = 0x5666;
-    spi_message[8] = 0x6777;
-    spi_message[9] = 0x7888;
-    spi_message[10] = SPI_EOM_HKFPGA; // not used
-    transfer_message(spi_message, data);
+    spi_command[0] = SPI_SOM_HKFPGA; // som
+    spi_command[1] = CW_FEEs_PRESENT; // cw
+    spi_command[2] = 0x0111;
+    spi_command[3] = 0x1222;
+    spi_command[4] = 0x2333;
+    spi_command[5] = 0x3444;
+    spi_command[6] = 0x4555;
+    spi_command[7] = 0x5666;
+    spi_command[8] = 0x6777;
+    spi_command[9] = 0x7888;
+    spi_command[10] = SPI_EOM_HKFPGA; // not used
+    transfer_message(spi_command, data);
 
     // data[2] is FEEs present J0-15
     // data[3] is FEEs present J16-31
@@ -242,159 +374,24 @@ void read_fees_present(unsigned short fees_present[])
     fees_present[31] = data[3] & 0x8000 >> 15;
 }
 
-// Read in and store FEE housekeeping data
-void read_fee_data(int data_type, float fee_buffer[])
-{
-	unsigned short data[11];
-	unsigned short spi_message[11];
-
-    // Define conversion factor from SPI readout to meaningful unit
-    float cf = 1.0;
-    if (data_type == FEE_VOLTAGES) {
-        cf = VOLT_CONVERSION_FACTOR;
-    } else if (data_type == FEE_CURRENTS) {
-        cf = AMP_CONVERSION_FACTOR;
-    }
-	
-    trig_adcs();
-	
-	spi_message[0] = SPI_SOM_HKFPGA; // som
-	spi_message[2] = 0x0111;
-	spi_message[3] = 0x1222;
-	spi_message[4] = 0x2333;
-	spi_message[5] = 0x3444;
-	spi_message[6] = 0x4555;
-	spi_message[7] = 0x5666;
-	spi_message[8] = 0x0000;
-	spi_message[9] = 0x0088;	
-	spi_message[10] = SPI_EOM_HKFPGA; // not used
-	
-    sleep_msec(10);
-    if (data_type == FEE_VOLTAGES) {
-        spi_message[1] = CW_RD_FEE0_V;
-    } else if (data_type == FEE_CURRENTS) {
-        spi_message[1] = CW_RD_FEE0_I;
-    }
-	transfer_message(spi_message, data);
-	
-    fee_buffer[5]  = data[2] * cf;
-	fee_buffer[12] = data[3] * cf;
-	fee_buffer[6]  = data[4] * cf;
-	fee_buffer[17] = data[5] * cf;
-	fee_buffer[7]  = data[6] * cf;
-	fee_buffer[13] = data[7] * cf;
-	fee_buffer[11] = data[8] * cf;
-	fee_buffer[18] = data[9] * cf;
-		
-	sleep_msec(10);
-    if (data_type == FEE_VOLTAGES) {
-        spi_message[1] = CW_RD_FEE8_V;
-    } else if (data_type == FEE_CURRENTS) {
-        spi_message[1] = CW_RD_FEE8_I;
-    }
-	transfer_message(spi_message, data);
-	
-    fee_buffer[4]  = data[2] * cf;
-	fee_buffer[10] = data[3] * cf;
-	fee_buffer[1]  = data[4] * cf;
-	fee_buffer[0]  = data[5] * cf;
-	fee_buffer[3]  = data[6] * cf;
-	fee_buffer[2]  = data[7] * cf;
-	fee_buffer[16] = data[8] * cf;
-	fee_buffer[22] = data[9] * cf;
-	
-	sleep_msec(10);
-    if (data_type == FEE_VOLTAGES) {
-        spi_message[1] = CW_RD_FEE16_V;
-    } else if (data_type == FEE_CURRENTS) {
-        spi_message[1] = CW_RD_FEE16_I;
-    }
-	transfer_message(spi_message, data);
-
-    fee_buffer[28] = data[2] * cf;
-	fee_buffer[24] = data[3] * cf;
-	fee_buffer[30] = data[4] * cf;
-	fee_buffer[23] = data[5] * cf;
-	fee_buffer[31] = data[6] * cf;
-	fee_buffer[29] = data[7] * cf;
-	fee_buffer[26] = data[8] * cf;
-	fee_buffer[25] = data[9] * cf;
-	
-	sleep_msec(10);
-    if (data_type == FEE_VOLTAGES) {
-        spi_message[1] = CW_RD_FEE24_V;
-    } else if (data_type == FEE_CURRENTS) {
-        spi_message[1] = CW_RD_FEE24_I;
-    }
-	transfer_message(spi_message, data);
-	
-    fee_buffer[20] = data[2] * cf;
-	fee_buffer[8]  = data[3] * cf;
-	fee_buffer[27] = data[4] * cf;
-	fee_buffer[15] = data[5] * cf;
-	fee_buffer[9]  = data[6] * cf;
-	fee_buffer[19] = data[7] * cf;
-	fee_buffer[21] = data[8] * cf;
-	fee_buffer[14] = data[9] * cf;
-}
-
-// Reset trigger and nstimer
-void reset_trigger_and_nstimer()
-{
-	unsigned short spi_message[11];
-	unsigned short data[11];
-	
-    spi_message[0] = SPI_SOM_TFPGA; //som
-	spi_message[1] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
-	spi_message[2] = 0x0111;
-	spi_message[3] = 0x1222;
-	spi_message[4] = 0x2333;
-	spi_message[5] = 0x3444;
-	spi_message[6] = 0x4555;
-	spi_message[7] = 0x5666;
-	spi_message[8] = 0x6777;
-	spi_message[9] = 0x7888;			
-	spi_message[10] = SPI_EOM_TFPGA; //not used
-	transfer_message(spi_message, data);
-}
-
-// Set trigger
-void set_trigger(unsigned short spi_commands[], unsigned short spi_data[])
-{
-	unsigned short spi_message[11];
-    
-    spi_message[0] = SPI_SOM_TFPGA; //som
-	spi_message[1] = SPI_SET_TRIG_AT_TIME; //cw
-	spi_message[2] = spi_commands[0];
-	spi_message[3] = spi_commands[1];
-	spi_message[4] = spi_commands[2];
-	spi_message[5] = spi_commands[3];
-	spi_message[6] = 0x0005;
-	spi_message[7] = 0x0006;
-	spi_message[8] = 0x0007;
-	spi_message[9] = 0x0008;			
-	spi_message[10] = SPI_EOM_TFPGA; //not used
-	transfer_message(spi_message, spi_data);
-}
-
 // Read nstimer, tack count and rate, and trigger count and rate
 void read_nstimer_trigger_rate(unsigned long long &nstimer,
         unsigned long &tack_count, unsigned long &trigger_count,
-        float &tack_rate, float &trigger_rate, unsigned short spi_data[]) {
-	unsigned short spi_message[11];
-   
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_READ_nsTimer_TFPGA; //cw
-    spi_message[2] = 0X0001;
-    spi_message[3] = 0X0002;
-    spi_message[4] = 0X0003;
-    spi_message[5] = 0X0004;
-    spi_message[6] = 0x0005;
-    spi_message[7] = 0x0006;
-    spi_message[8] = 0x0007;
-    spi_message[9] = 0x0008;			
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, spi_data);
+        float &tack_rate, float &trigger_rate, unsigned short spi_command[],
+        unsigned short spi_data[])
+{
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_READ_nsTimer_TFPGA; //cw
+    spi_command[2] = 0X0001;
+    spi_command[3] = 0X0002;
+    spi_command[4] = 0X0003;
+    spi_command[5] = 0X0004;
+    spi_command[6] = 0x0005;
+    spi_command[7] = 0x0006;
+    spi_command[8] = 0x0007;
+    spi_command[9] = 0x0008;			
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, spi_data);
     
     nstimer = ( ((unsigned long long) spi_data[2] << 48) |
 	       ((unsigned long long) spi_data[3] << 32) |
@@ -409,144 +406,84 @@ void read_nstimer_trigger_rate(unsigned long long &nstimer,
 	trigger_rate = trigger_count / trigger_rate;
 }
 
-// Enable or disable trigger
-void enable_disable_trigger(unsigned short spi_commands[],
-        unsigned short spi_data[]) {
-	unsigned short spi_message[11];
-
-    spi_message[0] = SPI_SOM_TFPGA; //som
-	spi_message[1] = SPI_L1_TRIGGER_EN; //cw
-	spi_message[2] = spi_commands[0];
-	spi_message[3] = 0x0002;
-	spi_message[4] = 0x0003;
-	spi_message[5] = 0x0004;
-	spi_message[6] = 0x0005;
-	spi_message[7] = 0x0006;
-	spi_message[8] = 0x0007;
-	spi_message[9] = 0x0008;			
-	spi_message[10] = SPI_EOM_TFPGA; //not used
-	transfer_message(spi_message, spi_data);
+// Reset trigger and nstimer
+void reset_trigger_and_nstimer()
+{
+	unsigned short spi_command[11];
+	unsigned short data[11];
+	
+    spi_command[0] = SPI_SOM_TFPGA; //som
+	spi_command[1] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
+	spi_command[2] = 0x0111;
+	spi_command[3] = 0x1222;
+	spi_command[4] = 0x2333;
+	spi_command[5] = 0x3444;
+	spi_command[6] = 0x4555;
+	spi_command[7] = 0x5666;
+	spi_command[8] = 0x6777;
+	spi_command[9] = 0x7888;			
+	spi_command[10] = SPI_EOM_TFPGA; //not used
+	transfer_message(spi_command, data);
 }
 
 // Set holdoff time
-void set_holdoff_time(unsigned short spi_commands[])
+void set_holdoff_time(unsigned short command_parameters[],
+        unsigned short spi_command[], unsigned short spi_data[])
 {
-	unsigned short spi_message[11];
-	unsigned short data[11];
-    
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_HOLDOFF_TFPGA; //cw
-    spi_message[2] = spi_commands[0];
-    spi_message[3] = 0x0002;
-    spi_message[4] = 0x0003;
-    spi_message[5] = 0x0004;
-    spi_message[6] = 0x0005;
-    spi_message[7] = 0x0006;
-    spi_message[8] = 0x0007;
-    spi_message[9] = 0x0008;			
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_HOLDOFF_TFPGA; //cw
+    spi_command[2] = command_parameters[0];
+    spi_command[3] = 0x0002;
+    spi_command[4] = 0x0003;
+    spi_command[5] = 0x0004;
+    spi_command[6] = 0x0005;
+    spi_command[7] = 0x0006;
+    spi_command[8] = 0x0007;
+    spi_command[9] = 0x0008;			
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, spi_data);
 }
 
 // Set TACK type and mode
-void set_tack_type_and_mode(unsigned short spi_commands[])
+void set_tack_type_and_mode(unsigned short command_parameters[],
+        unsigned short spi_command[], unsigned short spi_data[])
 {
-	unsigned short spi_message[11];
-	unsigned short data[11];
-    
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_SET_TACK_TYPE_MODE; //cw
-    spi_message[2] = spi_commands[0];
-    spi_message[3] = 0x0002;
-    spi_message[4] = 0x0003;
-    spi_message[5] = 0x0004;
-    spi_message[6] = 0x0005;
-    spi_message[7] = 0x0006;
-    spi_message[8] = 0x0007;
-    spi_message[9] = 0x0008;			
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_SET_TACK_TYPE_MODE; //cw
+    spi_command[2] = command_parameters[0];
+    spi_command[3] = 0x0002;
+    spi_command[4] = 0x0003;
+    spi_command[5] = 0x0004;
+    spi_command[6] = 0x0005;
+    spi_command[7] = 0x0006;
+    spi_command[8] = 0x0007;
+    spi_command[9] = 0x0008;			
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, spi_data);
 }
 
-// Turn FEEs on and off
-void power_control_modules(unsigned short spi_commands[])
+// Set trigger
+void set_trigger(unsigned short command_parameters[],
+        unsigned short spi_command[], unsigned short spi_data[])
 {
-	unsigned short spi_message[11];
-	unsigned short data[11];
-    
-    spi_message[0] = SPI_SOM_HKFPGA; //som
-    spi_message[1] = CW_FEE_POWER_CTL; //cw
-    spi_message[2] = spi_commands[0];
-    spi_message[3] = spi_commands[1];
-    spi_message[4] = 0x2333;
-    spi_message[5] = 0x3444;
-    spi_message[6] = 0x4555;
-    spi_message[7] = 0x5666;
-    spi_message[8] = 0x6777;
-    spi_message[9] = 0x7888;			
-    spi_message[10] = SPI_EOM_HKFPGA; //not used
-    transfer_message(spi_message, data);
-}
-
-// Send sync commands
-void sync()
-{
-	unsigned short spi_message[11];
-	unsigned short data[11];
-    
-    // Setup SYNC message.
-    // Must do a SYNC before TAACK messages will be effective
-    /* If Target module has already been synced, sending a SYNC message will
-     * have no effect */
-    // Set TYPE (01) and MODE (00) for a SYNC
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_SET_TACK_TYPE_MODE; //cw
-    spi_message[2] = 0x0004; // TYPE 01 MODE 00
-    spi_message[3] = 0x0000;
-    spi_message[4] = 0x0000;
-    spi_message[5] = 0x0000;
-    spi_message[6] = 0x0000;
-    spi_message[7] = 0x0000;
-    spi_message[8] = 0x0000;
-    spi_message[9] = 0x0000;			
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
-    
-    // Set a time to send the SYNC message
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_SET_TRIG_AT_TIME; //cw
-    spi_message[2] = 0x0000;
-    spi_message[3] = 0x0000;
-    spi_message[4] = 0x0001; // A short time after 0
-    spi_message[5] = 0x0004; //RichW0x0000;
-    // ?? Need a 4 because time in message ends up one tick behind
-    // A bug to be investigated in the TFPGA gate array HDL.
-    // Also the time has to have 3 LSBs 000
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
-    
-    // Reset the nsTimer to 0
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
-    
-    // The TFPGA will send the SYNC message when nsTimer reaches the time set
-    // above
-    
-    // Set TYPE and MODE back in anticipation of sending a TACK
-    // Setting TYPE (00) and MODE (00) so subsequent message are TACKs
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_SET_TACK_TYPE_MODE; //cw
-    spi_message[2] = 0x0000; // TYPE 00 MODE 00
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
+    spi_command[0] = SPI_SOM_TFPGA; //som
+	spi_command[1] = SPI_SET_TRIG_AT_TIME; //cw
+	spi_command[2] = command_parameters[0];
+	spi_command[3] = command_parameters[1];
+	spi_command[4] = command_parameters[2];
+	spi_command[5] = command_parameters[3];
+	spi_command[6] = 0x0005;
+	spi_command[7] = 0x0006;
+	spi_command[8] = 0x0007;
+	spi_command[9] = 0x0008;			
+	spi_command[10] = SPI_EOM_TFPGA; //not used
+	transfer_message(spi_command, spi_data);
 }
 
 // Set trigger mask
 void set_trigger_mask(unsigned short trigger_mask[])
 {
-	unsigned short spi_message[11];
+	unsigned short spi_command[11];
 	unsigned short data[11];
     unsigned short trigger_mask_commands[32];
     
@@ -558,67 +495,122 @@ void set_trigger_mask(unsigned short trigger_mask[])
     }
     fclose(myfile);
     
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_TRIGGERMASK_TFPGA; //cw
-    spi_message[2] = trigger_mask_commands[0];
-    spi_message[3] = trigger_mask_commands[1];
-    spi_message[4] = trigger_mask_commands[2];
-    spi_message[5] = trigger_mask_commands[3];
-    spi_message[6] = trigger_mask_commands[4];
-    spi_message[7] = trigger_mask_commands[5];
-    spi_message[8] = trigger_mask_commands[6];
-    spi_message[9] = trigger_mask_commands[7];			
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_TRIGGERMASK_TFPGA; //cw
+    spi_command[2] = trigger_mask_commands[0];
+    spi_command[3] = trigger_mask_commands[1];
+    spi_command[4] = trigger_mask_commands[2];
+    spi_command[5] = trigger_mask_commands[3];
+    spi_command[6] = trigger_mask_commands[4];
+    spi_command[7] = trigger_mask_commands[5];
+    spi_command[8] = trigger_mask_commands[6];
+    spi_command[9] = trigger_mask_commands[7];			
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, data);
     for (int i = 0; i < 8; i++) {
         trigger_mask[i] = data[i + 2];
     }
 
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_TRIGGERMASK1_TFPGA; //cw
-    spi_message[2] = trigger_mask_commands[8];
-    spi_message[3] = trigger_mask_commands[9];
-    spi_message[4] = trigger_mask_commands[10];
-    spi_message[5] = trigger_mask_commands[11];
-    spi_message[6] = trigger_mask_commands[12];
-    spi_message[7] = trigger_mask_commands[13];
-    spi_message[8] = trigger_mask_commands[14];
-    spi_message[9] = trigger_mask_commands[15];			
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_TRIGGERMASK1_TFPGA; //cw
+    spi_command[2] = trigger_mask_commands[8];
+    spi_command[3] = trigger_mask_commands[9];
+    spi_command[4] = trigger_mask_commands[10];
+    spi_command[5] = trigger_mask_commands[11];
+    spi_command[6] = trigger_mask_commands[12];
+    spi_command[7] = trigger_mask_commands[13];
+    spi_command[8] = trigger_mask_commands[14];
+    spi_command[9] = trigger_mask_commands[15];			
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, data);
     for (int i = 0; i < 8; i++) {
         trigger_mask[i + 8] = data[i + 2];
     }
     
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_TRIGGERMASK2_TFPGA; //cw
-    spi_message[2] = trigger_mask_commands[16];
-    spi_message[3] = trigger_mask_commands[17];
-    spi_message[4] = trigger_mask_commands[18];
-    spi_message[5] = trigger_mask_commands[19];
-    spi_message[6] = trigger_mask_commands[20];
-    spi_message[7] = trigger_mask_commands[21];
-    spi_message[8] = trigger_mask_commands[22];
-    spi_message[9] = trigger_mask_commands[23];			
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_TRIGGERMASK2_TFPGA; //cw
+    spi_command[2] = trigger_mask_commands[16];
+    spi_command[3] = trigger_mask_commands[17];
+    spi_command[4] = trigger_mask_commands[18];
+    spi_command[5] = trigger_mask_commands[19];
+    spi_command[6] = trigger_mask_commands[20];
+    spi_command[7] = trigger_mask_commands[21];
+    spi_command[8] = trigger_mask_commands[22];
+    spi_command[9] = trigger_mask_commands[23];			
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, data);
     for (int i = 0; i < 8; i++) {
         trigger_mask[i + 16] = data[i + 2];
     }
     
-    spi_message[0] = SPI_SOM_TFPGA; //som
-    spi_message[1] = SPI_TRIGGERMASK3_TFPGA; //cw
-    spi_message[2] = trigger_mask_commands[24];
-    spi_message[3] = trigger_mask_commands[25];
-    spi_message[4] = trigger_mask_commands[26];
-    spi_message[5] = trigger_mask_commands[27];
-    spi_message[6] = trigger_mask_commands[28];
-    spi_message[7] = trigger_mask_commands[29];
-    spi_message[8] = trigger_mask_commands[30];
-    spi_message[9] = trigger_mask_commands[31];			
-    spi_message[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_message, data);
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_TRIGGERMASK3_TFPGA; //cw
+    spi_command[2] = trigger_mask_commands[24];
+    spi_command[3] = trigger_mask_commands[25];
+    spi_command[4] = trigger_mask_commands[26];
+    spi_command[5] = trigger_mask_commands[27];
+    spi_command[6] = trigger_mask_commands[28];
+    spi_command[7] = trigger_mask_commands[29];
+    spi_command[8] = trigger_mask_commands[30];
+    spi_command[9] = trigger_mask_commands[31];			
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, data);
     for (int i = 0; i < 8; i++) {
         trigger_mask[i + 24] = data[i + 2];
     }
+}
+
+// Send sync commands
+void sync()
+{
+	unsigned short spi_command[11];
+	unsigned short data[11];
+    
+    // Setup SYNC message.
+    // Must do a SYNC before TAACK messages will be effective
+    /* If Target module has already been synced, sending a SYNC message will
+     * have no effect */
+    // Set TYPE (01) and MODE (00) for a SYNC
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_SET_TACK_TYPE_MODE; //cw
+    spi_command[2] = 0x0004; // TYPE 01 MODE 00
+    spi_command[3] = 0x0000;
+    spi_command[4] = 0x0000;
+    spi_command[5] = 0x0000;
+    spi_command[6] = 0x0000;
+    spi_command[7] = 0x0000;
+    spi_command[8] = 0x0000;
+    spi_command[9] = 0x0000;			
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, data);
+    
+    // Set a time to send the SYNC message
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_SET_TRIG_AT_TIME; //cw
+    spi_command[2] = 0x0000;
+    spi_command[3] = 0x0000;
+    spi_command[4] = 0x0001; // A short time after 0
+    spi_command[5] = 0x0004; //RichW0x0000;
+    // ?? Need a 4 because time in message ends up one tick behind
+    // A bug to be investigated in the TFPGA gate array HDL.
+    // Also the time has to have 3 LSBs 000
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, data);
+    
+    // Reset the nsTimer to 0
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, data);
+    
+    // The TFPGA will send the SYNC message when nsTimer reaches the time set
+    // above
+    
+    // Set TYPE and MODE back in anticipation of sending a TACK
+    // Setting TYPE (00) and MODE (00) so subsequent message are TACKs
+    spi_command[0] = SPI_SOM_TFPGA; //som
+    spi_command[1] = SPI_SET_TACK_TYPE_MODE; //cw
+    spi_command[2] = 0x0000; // TYPE 00 MODE 00
+    spi_command[10] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command, data);
 }

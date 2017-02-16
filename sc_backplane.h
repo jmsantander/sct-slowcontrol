@@ -19,7 +19,7 @@ private:
     float currents_[N_FEES];
     unsigned short present_[N_FEES];
     unsigned short trigger_mask_[N_FEES];
-    unsigned short spi_commands_[N_SPI];
+    unsigned short spi_command_[N_SPI];
     unsigned short spi_data_[N_SPI];
     unsigned long long nstimer_;
     unsigned long tack_count_;

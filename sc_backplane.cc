@@ -29,7 +29,7 @@ Backplane::Backplane()
     }
 
     for (int i = 0; i < N_SPI; i++) {
-        spi_commands_[i] = 0;
+        spi_command_[i] = 0;
         spi_data_[i] = 0;
         data_buffer.add_spi_command(0);
         data_buffer.add_spi_data(0);
@@ -51,7 +51,7 @@ Backplane::Backplane()
 }
 
 void Backplane::update_data(int command_code,
-        unsigned short command_parameters_for_request[], bool simulation_mode)
+        unsigned short command_parameters[], bool simulation_mode)
 {
     data_buffer.set_command_code(command_code);
     switch(command_code) {
@@ -105,50 +105,38 @@ void Backplane::update_data(int command_code,
         }
         case BP_SET_TRIGGER:
         case BP_ENABLE_DISABLE_TRIGGER:
-        {
-            unsigned short spi_data[11];
-            if (!simulation_mode) {
-                if (command_code == BP_SET_TRIGGER) {
-                    set_trigger(command_parameters_for_request, spi_data);
-                } else if (command_code == BP_ENABLE_DISABLE_TRIGGER) {
-                    enable_disable_trigger(command_parameters_for_request, spi_data);
-                }
-            } else {
-                // simulate
-                for (int i = 0; i < N_SPI; i++) {
-                    spi_data[i] = i;
-                }
-            }
-            for (int i = 0; i < N_SPI; i++) {
-                spi_data_[i] = spi_data[i];
-                data_buffer.set_spi_data(i, spi_data_[i]);
-            }
-            break;
-        }
-        case BP_RESET_TRIGGER_AND_NSTIMER:
-        case BP_SYNC:
         case BP_SET_HOLDOFF_TIME:
         case BP_SET_TACK_TYPE_AND_MODE:
         case BP_POWER_CONTROL_MODULES:
         {
+            unsigned short spi_command[11];
+            unsigned short spi_data[11];
             if (!simulation_mode) {
-                if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
-                    reset_trigger_and_nstimer();
-                } else if (command_code == BP_SYNC) {
-                    sync();
+                if (command_code == BP_SET_TRIGGER) {
+                    set_trigger(command_parameters, spi_command, spi_data);
+                } else if (command_code == BP_ENABLE_DISABLE_TRIGGER) {
+                    enable_disable_trigger(command_parameters, spi_command,
+                            spi_data);
                 } else if (command_code == BP_SET_HOLDOFF_TIME) {
-                    set_holdoff_time(command_parameters_for_request);
+                    set_holdoff_time(command_parameters, spi_command, spi_data);
                 } else if (command_code == BP_SET_TACK_TYPE_AND_MODE) {
-                    set_tack_type_and_mode(command_parameters_for_request);
+                    set_tack_type_and_mode(command_parameters, spi_command,
+                            spi_data);
                 } else if (command_code == BP_POWER_CONTROL_MODULES) {
-                    power_control_modules(command_parameters_for_request);
+                    power_control_modules(command_parameters, spi_command,
+                            spi_data);
                 }
             } else {
-                if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
-                    std::cout << "Simulating resetting trigger and nstimer..."
+                // simulate
+                for (int i = 0; i < N_SPI; i++) {
+                    spi_command[i] = i;
+                    spi_data[i] = i;
+                }
+                if (command_code == BP_SET_TRIGGER) {
+                    std::cout << "Simulating setting trigger..." << std::endl;
+                } else if (command_code == BP_ENABLE_DISABLE_TRIGGER) {
+                    std::cout << "Simulating enabling/disabling trigger..."
                         << std::endl;
-                } else if (command_code == BP_SYNC) {
-                    std::cout << "Simulating syncing..." << std::endl;
                 } else if (command_code == BP_SET_HOLDOFF_TIME) {
                     std::cout << "Simulating setting holdoff time..."
                         << std::endl;
@@ -160,6 +148,31 @@ void Backplane::update_data(int command_code,
                         << std::endl;
                 }
             }
+            for (int i = 0; i < N_SPI; i++) {
+                spi_command_[i] = spi_command[i];
+                spi_data_[i] = spi_data[i];
+                data_buffer.set_spi_command(i, spi_command_[i]);
+                data_buffer.set_spi_data(i, spi_data_[i]);
+            }
+            break;
+        }
+        case BP_RESET_TRIGGER_AND_NSTIMER:
+        case BP_SYNC:
+        {
+            if (!simulation_mode) {
+                if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
+                    reset_trigger_and_nstimer();
+                } else if (command_code == BP_SYNC) {
+                    sync();
+                }
+            } else {
+                if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
+                    std::cout << "Simulating resetting trigger and nstimer..."
+                        << std::endl;
+                } else if (command_code == BP_SYNC) {
+                    std::cout << "Simulating syncing..." << std::endl;
+                }
+            }
             break;
         }
         case BP_READ_NSTIMER_TRIGGER_RATE:
@@ -167,10 +180,11 @@ void Backplane::update_data(int command_code,
             unsigned long long nstimer = 0;
             unsigned long tack_count = 0, trigger_count = 0;
             float tack_rate = 0, trigger_rate = 0;
+            unsigned short spi_command[11];
             unsigned short spi_data[11];
             if (!simulation_mode) {
                 read_nstimer_trigger_rate(nstimer, tack_count, trigger_count,
-                        tack_rate, trigger_rate, spi_data);
+                        tack_rate, trigger_rate, spi_command, spi_data);
             } else {
                 // simulate
                 nstimer = 10000;
@@ -179,6 +193,7 @@ void Backplane::update_data(int command_code,
                 tack_rate = 10.10;
                 trigger_rate = 11.11;
                 for (int i = 0; i < N_SPI; i++) {
+                    spi_command[i] = i;
                     spi_data[i] = i;
                 }
             }
@@ -193,7 +208,9 @@ void Backplane::update_data(int command_code,
             trigger_rate_ = trigger_rate;
             data_buffer.set_trigger_rate(trigger_rate_);
             for (int i = 0; i < N_SPI; i++) {
+                spi_command_[i] = spi_command[i];
                 spi_data_[i] = spi_data[i];
+                data_buffer.set_spi_command(i, spi_command_[i]);
                 data_buffer.set_spi_data(i, spi_data_[i]);
             }
             break;
@@ -297,7 +314,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                         trigger_mask_[i] = data_buffer.trigger_mask(i);
                     }
                     for (int i = 0; i < N_SPI; i++) {
-                        spi_commands_[i] = data_buffer.spi_command(i);
+                        spi_command_[i] = data_buffer.spi_command(i);
                         spi_data_[i] = data_buffer.spi_data(i);
                     }
                     nstimer_ = data_buffer.nstimer();
