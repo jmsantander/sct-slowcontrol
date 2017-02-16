@@ -29,7 +29,9 @@ Backplane::Backplane()
     }
 
     for (int i = 0; i < N_SPI; i++) {
+        spi_commands_[i] = 0;
         spi_data_[i] = 0;
+        data_buffer.add_spi_command(0);
         data_buffer.add_spi_data(0);
     }
 
@@ -40,32 +42,33 @@ Backplane::Backplane()
     trigger_rate_ = 0.0;
 
     for (int i = 0; i < N_COMMANDS; i++) {
-        commands_[i] = 0;
-        settings_buffer.add_command(0);
+        command_parameters_[i] = 0;
+        settings_buffer.add_command_parameter(0);
     }
     
-    requested_updates_ = BP_NONE;
+    command_code_ = BP_NONE;
     updates_to_send = false;
 }
 
-void Backplane::update_data(int requested_updates,
-        unsigned short commands_for_request[], bool simulation_mode)
+void Backplane::update_data(int command_code,
+        unsigned short command_parameters_for_request[], bool simulation_mode)
 {
-    switch(requested_updates) {
+    data_buffer.set_command_code(command_code);
+    switch(command_code) {
         case FEE_VOLTAGES:
         case FEE_CURRENTS:
         {
             float fee_buffer[N_FEES];
             if (!simulation_mode) {
-                read_fee_data(requested_updates, fee_buffer);
+                read_fee_data(command_code, fee_buffer);
             } else {
                 simulate_fee_data(fee_buffer, N_FEES);
             }
             for (int i = 0; i < N_FEES; i++) {
-                if (requested_updates == FEE_VOLTAGES) {
+                if (command_code == FEE_VOLTAGES) {
                     voltages_[i] = fee_buffer[i];
                     data_buffer.set_voltage(i, voltages_[i]);
-                } else if (requested_updates == FEE_CURRENTS) {
+                } else if (command_code == FEE_CURRENTS) {
                     currents_[i] = fee_buffer[i];
                     data_buffer.set_current(i, currents_[i]);
                 }
@@ -105,10 +108,10 @@ void Backplane::update_data(int requested_updates,
         {
             unsigned short spi_data[11];
             if (!simulation_mode) {
-                if (requested_updates == BP_SET_TRIGGER) {
-                    set_trigger(commands_for_request, spi_data);
-                } else if (requested_updates == BP_ENABLE_DISABLE_TRIGGER) {
-                    enable_disable_trigger(commands_for_request, spi_data);
+                if (command_code == BP_SET_TRIGGER) {
+                    set_trigger(command_parameters_for_request, spi_data);
+                } else if (command_code == BP_ENABLE_DISABLE_TRIGGER) {
+                    enable_disable_trigger(command_parameters_for_request, spi_data);
                 }
             } else {
                 // simulate
@@ -129,30 +132,30 @@ void Backplane::update_data(int requested_updates,
         case BP_POWER_CONTROL_MODULES:
         {
             if (!simulation_mode) {
-                if (requested_updates == BP_RESET_TRIGGER_AND_NSTIMER) {
+                if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
                     reset_trigger_and_nstimer();
-                } else if (requested_updates == BP_SYNC) {
+                } else if (command_code == BP_SYNC) {
                     sync();
-                } else if (requested_updates == BP_SET_HOLDOFF_TIME) {
-                    set_holdoff_time(commands_for_request);
-                } else if (requested_updates == BP_SET_TACK_TYPE_AND_MODE) {
-                    set_tack_type_and_mode(commands_for_request);
-                } else if (requested_updates == BP_POWER_CONTROL_MODULES) {
-                    power_control_modules(commands_for_request);
+                } else if (command_code == BP_SET_HOLDOFF_TIME) {
+                    set_holdoff_time(command_parameters_for_request);
+                } else if (command_code == BP_SET_TACK_TYPE_AND_MODE) {
+                    set_tack_type_and_mode(command_parameters_for_request);
+                } else if (command_code == BP_POWER_CONTROL_MODULES) {
+                    power_control_modules(command_parameters_for_request);
                 }
             } else {
-                if (requested_updates == BP_RESET_TRIGGER_AND_NSTIMER) {
+                if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
                     std::cout << "Simulating resetting trigger and nstimer..."
                         << std::endl;
-                } else if (requested_updates == BP_SYNC) {
+                } else if (command_code == BP_SYNC) {
                     std::cout << "Simulating syncing..." << std::endl;
-                } else if (requested_updates == BP_SET_HOLDOFF_TIME) {
+                } else if (command_code == BP_SET_HOLDOFF_TIME) {
                     std::cout << "Simulating setting holdoff time..."
                         << std::endl;
-                } else if (requested_updates == BP_SET_TACK_TYPE_AND_MODE) {
+                } else if (command_code == BP_SET_TACK_TYPE_AND_MODE) {
                     std::cout << "Simulating setting TACK type and mode..."
                         << std::endl;
-                } else if (requested_updates == BP_POWER_CONTROL_MODULES) {
+                } else if (command_code == BP_POWER_CONTROL_MODULES) {
                     std::cout << "Simulating turning FEEs on and off..."
                         << std::endl;
                 }
@@ -202,14 +205,14 @@ void Backplane::update_data(int requested_updates,
     updates_to_send = true;
 }
 
-void Backplane::update_settings(int requested_updates,
+void Backplane::update_settings(int command_code,
         unsigned short settings_commands[])
 {
-    requested_updates_ = requested_updates;
-    settings_buffer.set_requested_updates(requested_updates_);
+    command_code_ = command_code;
+    settings_buffer.set_command_code(command_code_);
 
     for (int i = 0; i < N_COMMANDS; i++) {
-        settings_buffer.set_command(i, settings_commands[i]);
+        settings_buffer.set_command_parameter(i, settings_commands[i]);
     }
 
     updates_to_send = true;
@@ -244,9 +247,10 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                         return false;
                     }
                     std::cout << "Received settings.\n"; //TESTING
-                    requested_updates_ = settings_buffer.requested_updates();
+                    command_code_ = settings_buffer.command_code();
                     for (int i = 0; i < N_COMMANDS; i++) {
-                        commands_[i] = settings_buffer.command(i);
+                        command_parameters_[i] =
+                            settings_buffer.command_parameter(i);
                     }
                 }
             }
@@ -269,7 +273,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                     return false;
                 }
                 updates_to_send = false;
-                requested_updates_ = BP_NONE;
+                command_code_ = BP_NONE;
             } else {
                 if (!update_network(netinfo)) {
                     return false;
@@ -293,6 +297,7 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                         trigger_mask_[i] = data_buffer.trigger_mask(i);
                     }
                     for (int i = 0; i < N_SPI; i++) {
+                        spi_commands_[i] = data_buffer.spi_command(i);
                         spi_data_[i] = data_buffer.spi_data(i);
                     }
                     nstimer_ = data_buffer.nstimer();
@@ -319,8 +324,8 @@ bool Backplane::pi_initialize_lowlevel()
     
 void Backplane::apply_settings(bool simulation_mode)
 {
-    update_data(requested_updates_, commands_, simulation_mode);
-    requested_updates_ = BP_NONE;
+    update_data(command_code_, command_parameters_, simulation_mode);
+    command_code_ = BP_NONE;
 }
 
 void Backplane::print_data(int data_type)

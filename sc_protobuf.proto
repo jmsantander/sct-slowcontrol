@@ -1,19 +1,23 @@
+syntax = 'proto2';
+
 package slow_control;
 
 message Backplane_data {
-    repeated float voltage = 1;
-    repeated float current = 2;
-    repeated int32 present = 3;
-    repeated int32 trigger_mask = 4;
-    repeated int32 spi_data = 5;
-    optional uint64 nstimer = 6;
-    optional uint64 tack_count = 7;
-    optional uint64 trigger_count = 8;
-    optional float tack_rate = 9;
-    optional float trigger_rate = 10;
+    optional int32 command_code = 1;
+    repeated int32 spi_command = 2;
+    repeated int32 spi_data = 3;
+    repeated float voltage = 4;
+    repeated float current = 5;
+    repeated int32 present = 6;
+    repeated int32 trigger_mask = 7;
+    optional uint64 nstimer = 8;
+    optional uint64 tack_count = 9;
+    optional uint64 trigger_count = 10;
+    optional float tack_rate = 11;
+    optional float trigger_rate = 12;
 }
 
 message Backplane_settings {
-    optional int32 requested_updates = 1;
-    repeated int32 command = 2;
+    optional int32 command_code = 1;
+    repeated int32 command_parameter = 2;
 }

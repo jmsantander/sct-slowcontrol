@@ -508,6 +508,10 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
         } else {
             // Successfully received the message
             iter->recv_status = MSG_DONE;
+            // If the server receives a (data) message from the Pi, log it
+            if ((netinfo.device == SERVER) && (iter->device == PI)) {
+                log_data_message(iter->message);
+            }
         }
     }
     // Send messages to connections as specified by device
@@ -564,9 +568,6 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
                                 } else {
                                     // Successfully sent the message
                                     iter_gui->send_status = MSG_DONE;
-                                    // Log message
-                                    log_message(iter_pi->message,
-                                            LO_DATA_MESSAGE);
                                 }
                             }
                             // Send settings from GUI to Pi only if both ready
@@ -580,9 +581,6 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
                                 } else {
                                     // Successfully sent the message
                                     iter_pi->send_status = MSG_DONE;
-                                    // Log message
-                                    log_message(iter_gui->message,
-                                            LO_SETTINGS_MESSAGE);
                                 }
                             }
                         }

@@ -17,10 +17,6 @@
 #define BP_SYNC 11
 #define BP_SET_TRIGGER_MASK 12
 
-// Codes for logging different types of message
-#define LO_DATA_MESSAGE 0
-#define LO_SETTINGS_MESSAGE 1
-
 // Read in and store a command from the user from stdin
 // Return true if the command is valid, false otherwise
 bool read_command(std::string &command, std::string &value);
@@ -40,5 +36,5 @@ void simulate_trigger_mask(unsigned short trigger_mask[], const int n_fees);
 // Display SPI data
 void display_spi_data(unsigned short spi_data[]);
 
-// Log a message
-void log_message(std::string message, int message_type);
+// Log a data message
+void log_data_message(std::string message);

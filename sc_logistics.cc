@@ -101,20 +101,95 @@ void display_spi_data(unsigned short spi_data[])
     std::cout << std::setfill(' '); // clear fill
 }
                                     
-// Log a message
-void log_message(std::string message, int message_type)
+// Log a data message
+void log_data_message(std::string message)
 {
-    if (message_type == LO_DATA_MESSAGE) {
-        std::cout << "Sent Pi->GUI" << std::endl;
-        slow_control::Backplane_data data_buffer;
-    } else if (message_type == LO_SETTINGS_MESSAGE) {
-        std::cout << "Sent GUI->Pi" << std::endl;
-        slow_control::Backplane_settings settings;
-        if (!settings.ParseFromString(message)) {
-            std::cerr << "Warning: could not parse settings message\n";
-            return;
+    slow_control::Backplane_data data;
+    if (!data.ParseFromString(message)) {
+        std::cerr << "Warning: could not parse data message" << std::endl;
+        return;
+    }
+    switch(data.command_code()) {
+        case BP_NONE:
+            break;
+        case FEE_VOLTAGES:
+        {
+            // Log command
+            std::cout << "LOG " << "fee_voltages" << std::endl;
+            // Log FEE voltages
+            break;
         }
-        std::cout << "The command code is " << settings.requested_updates()
-            << std::endl;
+        case FEE_CURRENTS:
+        {
+            // Log command
+            std::cout << "LOG " << "fee_currents" << std::endl;
+            // Log FEE currents
+            break;
+        }
+        case FEE_PRESENT:
+        {
+            // Log command
+            std::cout << "LOG " << "fee_present" << std::endl;
+            // Log FEEs present
+            break;
+        }
+        case BP_SET_TRIGGER_MASK:
+        {
+            // Log command
+            std::cout << "LOG " << "set_trigger_mask" << std::endl;
+            // Log trigger mask
+            break;
+        }
+        case BP_RESET_TRIGGER_AND_NSTIMER:
+        {
+            // Log command
+            std::cout << "LOG " << "reset_trigger_and_nstimer" << std::endl;
+            break;
+        }
+        case BP_SYNC:
+        {
+            // Log command
+            std::cout << "LOG " << "sync" << std::endl;
+            break;
+        }
+        case BP_SET_HOLDOFF_TIME:
+        {
+            // Log command
+            std::cout << "LOG " << "set_holdoff_time" << std::endl;
+            break;
+        }
+        case BP_SET_TACK_TYPE_AND_MODE:
+        {
+            // Log command
+            std::cout << "LOG " << "set_tack_type_and_mode" << std::endl;
+            break;
+        }
+        case BP_POWER_CONTROL_MODULES:
+        {
+            // Log command
+            std::cout << "LOG " << "power_control_modules" << std::endl;
+            break;
+        }
+        case BP_SET_TRIGGER:
+        {
+            // Log command
+            std::cout << "LOG " << "set_trigger" << std::endl;
+            // Log SPI
+            break;
+        }
+        case BP_READ_NSTIMER_TRIGGER_RATE:
+        {
+            // Log command
+            std::cout << "LOG " << "read_nstimer_trigger_rate" << std::endl;
+            // Log SPI
+            break;
+        }
+        case BP_ENABLE_DISABLE_TRIGGER:
+        {
+            // Log command
+            std::cout << "LOG " << "enable_disable_trigger" << std::endl;
+            // Log SPI
+            break;
+        }
     }
 }

@@ -19,6 +19,7 @@ private:
     float currents_[N_FEES];
     unsigned short present_[N_FEES];
     unsigned short trigger_mask_[N_FEES];
+    unsigned short spi_commands_[N_SPI];
     unsigned short spi_data_[N_SPI];
     unsigned long long nstimer_;
     unsigned long tack_count_;
@@ -26,8 +27,8 @@ private:
     float tack_rate_;
     float trigger_rate_;
 
-    int requested_updates_;
-    unsigned short commands_[N_COMMANDS];
+    int command_code_;
+    unsigned short command_parameters_[N_COMMANDS];
     bool updates_to_send;
 
     slow_control::Backplane_data data_buffer;
@@ -35,11 +36,11 @@ private:
 public:
     Backplane();
 
-    void update_data(int requested_updates,
+    void update_data(int command_code,
             unsigned short commands_for_request[],
             bool simulation_mode = false);
 
-    void update_settings(int requested_updates, 
+    void update_settings(int command_code, 
             unsigned short settings_commands[]);
 
     bool synchronize_network(Network_info &netinfo);
@@ -53,7 +54,7 @@ public:
     // class inheritance
     bool pi_initialize_lowlevel();
 
-    float requested_updates() { return requested_updates_; }
+    float command_code() { return command_code_; }
 };
 
 #endif
