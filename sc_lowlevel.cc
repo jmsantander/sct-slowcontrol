@@ -569,6 +569,7 @@ void sync()
     spi_command[9] = 0x0000;			
     spi_command[10] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_command, data);
+    sleep_msec(10);
     
     // Set a time to send the SYNC message
     spi_command[0] = SPI_SOM_TFPGA; //som
@@ -582,12 +583,14 @@ void sync()
     // Also the time has to have 3 LSBs 000
     spi_command[10] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_command, data);
+    sleep_msec(10);
     
     // Reset the nsTimer to 0
     spi_command[0] = SPI_SOM_TFPGA; //som
     spi_command[1] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
     spi_command[10] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_command, data);
+    sleep_msec(10);
     
     // The TFPGA will send the SYNC message when nsTimer reaches the time set
     // above
