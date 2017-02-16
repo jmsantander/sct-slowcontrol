@@ -35,12 +35,6 @@ Backplane::Backplane()
         data_buffer.add_spi_data(0);
     }
 
-    nstimer_ = 0;
-    tack_count_ = 0;
-    trigger_count_ = 0;
-    tack_rate_ = 0.0;
-    trigger_rate_ = 0.0;
-
     for (int i = 0; i < N_COMMANDS; i++) {
         command_parameters_[i] = 0;
         settings_buffer.add_command_parameter(0);
@@ -108,6 +102,7 @@ void Backplane::update_data(int command_code,
         case BP_SET_HOLDOFF_TIME:
         case BP_SET_TACK_TYPE_AND_MODE:
         case BP_POWER_CONTROL_MODULES:
+        case BP_READ_NSTIMER_TRIGGER_RATE:
         {
             unsigned short spi_command[11];
             unsigned short spi_data[11];
@@ -125,6 +120,8 @@ void Backplane::update_data(int command_code,
                 } else if (command_code == BP_POWER_CONTROL_MODULES) {
                     power_control_modules(command_parameters, spi_command,
                             spi_data);
+                } else if (command_code == BP_READ_NSTIMER_TRIGGER_RATE) {
+                    read_nstimer_trigger_rate(spi_command, spi_data);
                 }
             } else {
                 // simulate
@@ -146,6 +143,9 @@ void Backplane::update_data(int command_code,
                 } else if (command_code == BP_POWER_CONTROL_MODULES) {
                     std::cout << "Simulating turning FEEs on and off..."
                         << std::endl;
+                } else if (command_code == BP_READ_NSTIMER_TRIGGER_RATE) {
+                    std::cout << "Simulating reading nstimer and " 
+                        << "trigger rate..." << std::endl;
                 }
             }
             for (int i = 0; i < N_SPI; i++) {
@@ -172,46 +172,6 @@ void Backplane::update_data(int command_code,
                 } else if (command_code == BP_SYNC) {
                     std::cout << "Simulating syncing..." << std::endl;
                 }
-            }
-            break;
-        }
-        case BP_READ_NSTIMER_TRIGGER_RATE:
-        {
-            unsigned long long nstimer = 0;
-            unsigned long tack_count = 0, trigger_count = 0;
-            float tack_rate = 0, trigger_rate = 0;
-            unsigned short spi_command[11];
-            unsigned short spi_data[11];
-            if (!simulation_mode) {
-                read_nstimer_trigger_rate(nstimer, tack_count, trigger_count,
-                        tack_rate, trigger_rate, spi_command, spi_data);
-            } else {
-                // simulate
-                nstimer = 10000;
-                tack_count = 300;
-                trigger_count = 400;
-                tack_rate = 10.10;
-                trigger_rate = 11.11;
-                for (int i = 0; i < N_SPI; i++) {
-                    spi_command[i] = i;
-                    spi_data[i] = i;
-                }
-            }
-            nstimer_ = nstimer;
-            data_buffer.set_nstimer(nstimer_);
-            tack_count_ = tack_count;
-            data_buffer.set_tack_count(tack_count_);
-            trigger_count_ = trigger_count;
-            data_buffer.set_trigger_count(trigger_count_);
-            tack_rate_ = tack_rate;
-            data_buffer.set_tack_rate(tack_rate_);
-            trigger_rate_ = trigger_rate;
-            data_buffer.set_trigger_rate(trigger_rate_);
-            for (int i = 0; i < N_SPI; i++) {
-                spi_command_[i] = spi_command[i];
-                spi_data_[i] = spi_data[i];
-                data_buffer.set_spi_command(i, spi_command_[i]);
-                data_buffer.set_spi_data(i, spi_data_[i]);
             }
             break;
         }
@@ -317,11 +277,6 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                         spi_command_[i] = data_buffer.spi_command(i);
                         spi_data_[i] = data_buffer.spi_data(i);
                     }
-                    nstimer_ = data_buffer.nstimer();
-                    tack_count_ = data_buffer.tack_count();
-                    trigger_count_ = data_buffer.trigger_count();
-                    tack_rate_ = data_buffer.tack_rate();
-                    trigger_rate_ = data_buffer.trigger_rate();
                 }
             }
             break;
@@ -434,13 +389,31 @@ void Backplane::print_data(int data_type)
         }
         case BP_READ_NSTIMER_TRIGGER_RATE:
         {
+            unsigned long long nstimer;
+            unsigned long tack_count;
+            unsigned long trigger_count;
+            float tack_rate;
+            float trigger_rate;
+
+            nstimer = ( ((unsigned long long) spi_data_[2] << 48) |
+                   ((unsigned long long) spi_data_[3] << 32) |
+                   ((unsigned long long) spi_data_[4] << 16) |
+                   ((unsigned long long) spi_data_[5]      ));
+            //TFPGA adds one extra on reset
+            tack_count = ((spi_data_[6] << 16) | spi_data_[7]) - 1;
+            tack_rate = (float) nstimer / 1000000000;
+            tack_rate = tack_count / tack_rate;
+            trigger_count = ((spi_data_[8] << 16) | spi_data_[9]) - 1;
+            trigger_rate = (float) nstimer / 1000000000;
+            trigger_rate = trigger_count / trigger_rate;
+
             display_spi_data(spi_data_);
-            printf("nsTimer %llu ns\n", nstimer_);
-            printf("TACK Count %lu\n", tack_count_);
-            printf("TACK Rate: %6.2f Hz\n", tack_rate_);
+            printf("nsTimer %llu ns\n", nstimer);
+            printf("TACK Count %lu\n", tack_count);
+            printf("TACK Rate: %6.2f Hz\n", tack_rate);
             // 4 phases or external trigger can HW trigger
-        	printf("Hardware Trigger Count %lu\n", trigger_count_);
-        	printf("HW Trigger Rate: %6.2f Hz\n", trigger_rate_);
+        	printf("Hardware Trigger Count %lu\n", trigger_count);
+        	printf("HW Trigger Rate: %6.2f Hz\n", trigger_rate);
             break;
         }
     }

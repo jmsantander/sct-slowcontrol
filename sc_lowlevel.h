@@ -22,9 +22,7 @@ void read_fee_data(int data_type, float fee_buffer[]);
 void read_fees_present(unsigned short fees_present[]);
 
 // Read nstimer, tack count and rate, and trigger count and rate
-void read_nstimer_trigger_rate(unsigned long long &nstimer,
-        unsigned long &tack_count, unsigned long &trigger_count,
-        float &tack_rate, float &trigger_rate, unsigned short spi_command[],
+void read_nstimer_trigger_rate(unsigned short spi_command[],
         unsigned short spi_data[]);
 
 // Reset trigger and nstimer

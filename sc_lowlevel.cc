@@ -375,9 +375,7 @@ void read_fees_present(unsigned short fees_present[])
 }
 
 // Read nstimer, tack count and rate, and trigger count and rate
-void read_nstimer_trigger_rate(unsigned long long &nstimer,
-        unsigned long &tack_count, unsigned long &trigger_count,
-        float &tack_rate, float &trigger_rate, unsigned short spi_command[],
+void read_nstimer_trigger_rate(unsigned short spi_command[],
         unsigned short spi_data[])
 {
     spi_command[0] = SPI_SOM_TFPGA; //som
@@ -392,18 +390,6 @@ void read_nstimer_trigger_rate(unsigned long long &nstimer,
     spi_command[9] = 0x0008;			
     spi_command[10] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_command, spi_data);
-    
-    nstimer = ( ((unsigned long long) spi_data[2] << 48) |
-	       ((unsigned long long) spi_data[3] << 32) |
-	       ((unsigned long long) spi_data[4] << 16) |
-	       ((unsigned long long) spi_data[5]      ));
-    //TFPGA adds one extra on reset
-    tack_count = ((spi_data[6] << 16) | spi_data[7]) - 1;
-    tack_rate = (float) nstimer / 1000000000;
-    tack_rate = tack_count / tack_rate;
-	trigger_count = ((spi_data[8] << 16) | spi_data[9]) - 1;
-	trigger_rate = (float) nstimer / 1000000000;
-	trigger_rate = trigger_count / trigger_rate;
 }
 
 // Reset trigger and nstimer

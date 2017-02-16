@@ -21,11 +21,6 @@ private:
     unsigned short trigger_mask_[N_FEES];
     unsigned short spi_command_[N_SPI];
     unsigned short spi_data_[N_SPI];
-    unsigned long long nstimer_;
-    unsigned long tack_count_;
-    unsigned long trigger_count_;
-    float tack_rate_;
-    float trigger_rate_;
 
     int command_code_;
     unsigned short command_parameters_[N_COMMANDS];
