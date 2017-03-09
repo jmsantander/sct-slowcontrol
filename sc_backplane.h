@@ -11,16 +11,18 @@
 #define N_FEES 32 // number of FEEs
 #define N_COMMANDS 4 // number of commands for sending settings
 #define N_SPI 11 // length of an SPI data array
+#define N_MESSAGES 4 // maximum number of SPI messages from a single command
 
 class Backplane
 {
 private:
     float voltages_[N_FEES];
     float currents_[N_FEES];
+    unsigned short n_spi_messages_;
     unsigned short present_[N_FEES];
     unsigned short trigger_mask_[N_FEES];
-    unsigned short spi_command_[N_SPI];
-    unsigned short spi_data_[N_SPI];
+    unsigned short spi_command_[N_SPI * N_MESSAGES];
+    unsigned short spi_data_[N_SPI * N_MESSAGES];
 
     int command_code_;
     unsigned short command_parameters_[N_COMMANDS];

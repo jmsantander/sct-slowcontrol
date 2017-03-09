@@ -223,11 +223,9 @@ void power_control_modules(unsigned short command_parameters[],
 }
 
 // Read in and store FEE housekeeping data
-void read_fee_data(int data_type, float fee_buffer[])
+void read_fee_data(int data_type, float fee_buffer[],
+        unsigned short spi_command[], unsigned short spi_data[])
 {
-	unsigned short data[11];
-	unsigned short spi_command[11];
-
     // Define conversion factor from SPI readout to meaningful unit
     float cf = 1.0;
     if (data_type == FEE_VOLTAGES) {
@@ -237,93 +235,85 @@ void read_fee_data(int data_type, float fee_buffer[])
     }
 	
     trig_adcs();
-	
-	spi_command[0] = SPI_SOM_HKFPGA; // som
-	spi_command[2] = 0x0111;
-	spi_command[3] = 0x1222;
-	spi_command[4] = 0x2333;
-	spi_command[5] = 0x3444;
-	spi_command[6] = 0x4555;
-	spi_command[7] = 0x5666;
-	spi_command[8] = 0x0000;
-	spi_command[9] = 0x0088;	
-	spi_command[10] = SPI_EOM_HKFPGA; // not used
-	
-    sleep_msec(10);
+
+    for (int mi = 0; mi < 4; mi++) {    
+	    spi_command[mi*11 + 0] = SPI_SOM_HKFPGA; // som
+	    spi_command[mi*11 + 2] = 0x0111;
+	    spi_command[mi*11 + 3] = 0x1222;
+	    spi_command[mi*11 + 4] = 0x2333;
+	    spi_command[mi*11 + 5] = 0x3444;
+	    spi_command[mi*11 + 6] = 0x4555;
+	    spi_command[mi*11 + 7] = 0x5666;
+	    spi_command[mi*11 + 8] = 0x0000;
+	    spi_command[mi*11 + 9] = 0x0088;	
+	    spi_command[mi*11 + 10] = SPI_EOM_HKFPGA; // not used
+    }
+    
     if (data_type == FEE_VOLTAGES) {
         spi_command[1] = CW_RD_FEE0_V;
+        spi_command[12] = CW_RD_FEE8_V;
+        spi_command[23] = CW_RD_FEE16_V;
+        spi_command[34] = CW_RD_FEE24_V;
     } else if (data_type == FEE_CURRENTS) {
         spi_command[1] = CW_RD_FEE0_I;
+        spi_command[12] = CW_RD_FEE8_I;
+        spi_command[23] = CW_RD_FEE16_I;
+        spi_command[34] = CW_RD_FEE24_I;
     }
-	transfer_message(spi_command, data);
 	
-    fee_buffer[5]  = data[2] * cf;
-	fee_buffer[12] = data[3] * cf;
-	fee_buffer[6]  = data[4] * cf;
-	fee_buffer[17] = data[5] * cf;
-	fee_buffer[7]  = data[6] * cf;
-	fee_buffer[13] = data[7] * cf;
-	fee_buffer[11] = data[8] * cf;
-	fee_buffer[18] = data[9] * cf;
+    sleep_msec(10);
+	transfer_message(spi_command, spi_data);
+	
+    fee_buffer[5]  = spi_data[2] * cf;
+	fee_buffer[12] = spi_data[3] * cf;
+	fee_buffer[6]  = spi_data[4] * cf;
+	fee_buffer[17] = spi_data[5] * cf;
+	fee_buffer[7]  = spi_data[6] * cf;
+	fee_buffer[13] = spi_data[7] * cf;
+	fee_buffer[11] = spi_data[8] * cf;
+	fee_buffer[18] = spi_data[9] * cf;
 		
 	sleep_msec(10);
-    if (data_type == FEE_VOLTAGES) {
-        spi_command[1] = CW_RD_FEE8_V;
-    } else if (data_type == FEE_CURRENTS) {
-        spi_command[1] = CW_RD_FEE8_I;
-    }
-	transfer_message(spi_command, data);
+	transfer_message(spi_command + 11, spi_data + 11);
 	
-    fee_buffer[4]  = data[2] * cf;
-	fee_buffer[10] = data[3] * cf;
-	fee_buffer[1]  = data[4] * cf;
-	fee_buffer[0]  = data[5] * cf;
-	fee_buffer[3]  = data[6] * cf;
-	fee_buffer[2]  = data[7] * cf;
-	fee_buffer[16] = data[8] * cf;
-	fee_buffer[22] = data[9] * cf;
+    fee_buffer[4]  = spi_data[13] * cf;
+	fee_buffer[10] = spi_data[14] * cf;
+	fee_buffer[1]  = spi_data[15] * cf;
+	fee_buffer[0]  = spi_data[16] * cf;
+	fee_buffer[3]  = spi_data[17] * cf;
+	fee_buffer[2]  = spi_data[18] * cf;
+	fee_buffer[16] = spi_data[19] * cf;
+	fee_buffer[22] = spi_data[20] * cf;
 	
 	sleep_msec(10);
-    if (data_type == FEE_VOLTAGES) {
-        spi_command[1] = CW_RD_FEE16_V;
-    } else if (data_type == FEE_CURRENTS) {
-        spi_command[1] = CW_RD_FEE16_I;
-    }
-	transfer_message(spi_command, data);
+	transfer_message(spi_command + 22, spi_data + 22);
 
-    fee_buffer[28] = data[2] * cf;
-	fee_buffer[24] = data[3] * cf;
-	fee_buffer[30] = data[4] * cf;
-	fee_buffer[23] = data[5] * cf;
-	fee_buffer[31] = data[6] * cf;
-	fee_buffer[29] = data[7] * cf;
-	fee_buffer[26] = data[8] * cf;
-	fee_buffer[25] = data[9] * cf;
+    fee_buffer[28] = spi_data[24] * cf;
+	fee_buffer[24] = spi_data[25] * cf;
+	fee_buffer[30] = spi_data[26] * cf;
+	fee_buffer[23] = spi_data[27] * cf;
+	fee_buffer[31] = spi_data[28] * cf;
+	fee_buffer[29] = spi_data[29] * cf;
+	fee_buffer[26] = spi_data[30] * cf;
+	fee_buffer[25] = spi_data[31] * cf;
 	
 	sleep_msec(10);
-    if (data_type == FEE_VOLTAGES) {
-        spi_command[1] = CW_RD_FEE24_V;
-    } else if (data_type == FEE_CURRENTS) {
-        spi_command[1] = CW_RD_FEE24_I;
-    }
-	transfer_message(spi_command, data);
+	transfer_message(spi_command + 33, spi_data + 33);
 	
-    fee_buffer[20] = data[2] * cf;
-	fee_buffer[8]  = data[3] * cf;
-	fee_buffer[27] = data[4] * cf;
-	fee_buffer[15] = data[5] * cf;
-	fee_buffer[9]  = data[6] * cf;
-	fee_buffer[19] = data[7] * cf;
-	fee_buffer[21] = data[8] * cf;
-	fee_buffer[14] = data[9] * cf;
+    fee_buffer[20] = spi_data[35] * cf;
+	fee_buffer[8]  = spi_data[36] * cf;
+	fee_buffer[27] = spi_data[37] * cf;
+	fee_buffer[15] = spi_data[38] * cf;
+	fee_buffer[9]  = spi_data[39] * cf;
+	fee_buffer[19] = spi_data[40] * cf;
+	fee_buffer[21] = spi_data[41] * cf;
+	fee_buffer[14] = spi_data[42] * cf;
 }
 
 // Determine which FEEs are present
-void read_fees_present(unsigned short fees_present[])
+void read_fees_present(unsigned short fees_present[],
+        unsigned short spi_command[], unsigned short spi_data[])
 {
-    unsigned short spi_command[11];
-    unsigned short data[11];
-
     spi_command[0] = SPI_SOM_HKFPGA; // som
     spi_command[1] = CW_FEEs_PRESENT; // cw
     spi_command[2] = 0x0111;
@@ -335,43 +325,43 @@ void read_fees_present(unsigned short fees_present[])
     spi_command[8] = 0x6777;
     spi_command[9] = 0x7888;
     spi_command[10] = SPI_EOM_HKFPGA; // not used
-    transfer_message(spi_command, data);
+    transfer_message(spi_command, spi_data);
 
     // data[2] is FEEs present J0-15
     // data[3] is FEEs present J16-31
     
-    fees_present[0] = data[2] & 0x0001;
-    fees_present[1] = data[2] & 0x0002 >> 1;
-    fees_present[2] = data[2] & 0x0004 >> 2;
-    fees_present[3] = data[2] & 0x0008 >> 3;
-    fees_present[4] = data[2] & 0x0010 >> 4;
-    fees_present[5] = data[2] & 0x0020 >> 5;
-    fees_present[6] = data[2] & 0x0040 >> 6;
-    fees_present[7] = data[2] & 0x0080 >> 7;
-    fees_present[8] = data[2] & 0x0100 >> 8;
-    fees_present[9] = data[2] & 0x0200 >> 9;
-    fees_present[10] = data[2] & 0x0400 >> 10;
-    fees_present[11] = data[2] & 0x0800 >> 11;
-    fees_present[12] = data[2] & 0x1000 >> 12;
-    fees_present[13] = data[2] & 0x2000 >> 13;
-    fees_present[14] = data[2] & 0x4000 >> 14;
-    fees_present[15] = data[2] & 0x8000 >> 15;
-    fees_present[16] = data[3] & 0x0001;
-    fees_present[17] = data[3] & 0x0002 >> 1;
-    fees_present[18] = data[3] & 0x0004 >> 2;
-    fees_present[19] = data[3] & 0x0008 >> 3;
-    fees_present[20] = data[3] & 0x0010 >> 4;
-    fees_present[21] = data[3] & 0x0020 >> 5;
-    fees_present[22] = data[3] & 0x0040 >> 6;
-    fees_present[23] = data[3] & 0x0080 >> 7;
-    fees_present[24] = data[3] & 0x0100 >> 8;
-    fees_present[25] = data[3] & 0x0200 >> 9;
-    fees_present[26] = data[3] & 0x0400 >> 10;
-    fees_present[27] = data[3] & 0x0800 >> 11;
-    fees_present[28] = data[3] & 0x1000 >> 12;
-    fees_present[29] = data[3] & 0x2000 >> 13;
-    fees_present[30] = data[3] & 0x4000 >> 14;
-    fees_present[31] = data[3] & 0x8000 >> 15;
+    fees_present[0] = spi_data[2] & 0x0001;
+    fees_present[1] = spi_data[2] & 0x0002 >> 1;
+    fees_present[2] = spi_data[2] & 0x0004 >> 2;
+    fees_present[3] = spi_data[2] & 0x0008 >> 3;
+    fees_present[4] = spi_data[2] & 0x0010 >> 4;
+    fees_present[5] = spi_data[2] & 0x0020 >> 5;
+    fees_present[6] = spi_data[2] & 0x0040 >> 6;
+    fees_present[7] = spi_data[2] & 0x0080 >> 7;
+    fees_present[8] = spi_data[2] & 0x0100 >> 8;
+    fees_present[9] = spi_data[2] & 0x0200 >> 9;
+    fees_present[10] = spi_data[2] & 0x0400 >> 10;
+    fees_present[11] = spi_data[2] & 0x0800 >> 11;
+    fees_present[12] = spi_data[2] & 0x1000 >> 12;
+    fees_present[13] = spi_data[2] & 0x2000 >> 13;
+    fees_present[14] = spi_data[2] & 0x4000 >> 14;
+    fees_present[15] = spi_data[2] & 0x8000 >> 15;
+    fees_present[16] = spi_data[3] & 0x0001;
+    fees_present[17] = spi_data[3] & 0x0002 >> 1;
+    fees_present[18] = spi_data[3] & 0x0004 >> 2;
+    fees_present[19] = spi_data[3] & 0x0008 >> 3;
+    fees_present[20] = spi_data[3] & 0x0010 >> 4;
+    fees_present[21] = spi_data[3] & 0x0020 >> 5;
+    fees_present[22] = spi_data[3] & 0x0040 >> 6;
+    fees_present[23] = spi_data[3] & 0x0080 >> 7;
+    fees_present[24] = spi_data[3] & 0x0100 >> 8;
+    fees_present[25] = spi_data[3] & 0x0200 >> 9;
+    fees_present[26] = spi_data[3] & 0x0400 >> 10;
+    fees_present[27] = spi_data[3] & 0x0800 >> 11;
+    fees_present[28] = spi_data[3] & 0x1000 >> 12;
+    fees_present[29] = spi_data[3] & 0x2000 >> 13;
+    fees_present[30] = spi_data[3] & 0x4000 >> 14;
+    fees_present[31] = spi_data[3] & 0x8000 >> 15;
 }
 
 // Read nstimer, tack count and rate, and trigger count and rate
@@ -393,11 +383,9 @@ void read_nstimer_trigger_rate(unsigned short spi_command[],
 }
 
 // Reset trigger and nstimer
-void reset_trigger_and_nstimer()
+void reset_trigger_and_nstimer(unsigned short spi_command[],
+        unsigned short spi_data[])
 {
-	unsigned short spi_command[11];
-	unsigned short data[11];
-	
     spi_command[0] = SPI_SOM_TFPGA; //som
 	spi_command[1] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
 	spi_command[2] = 0x0111;
@@ -409,7 +397,7 @@ void reset_trigger_and_nstimer()
 	spi_command[8] = 0x6777;
 	spi_command[9] = 0x7888;			
 	spi_command[10] = SPI_EOM_TFPGA; //not used
-	transfer_message(spi_command, data);
+	transfer_message(spi_command, spi_data);
 }
 
 // Set holdoff time
@@ -467,10 +455,9 @@ void set_trigger(unsigned short command_parameters[],
 }
 
 // Set trigger mask
-void set_trigger_mask(unsigned short trigger_mask[])
+void set_trigger_mask(unsigned short trigger_mask[],
+        unsigned short spi_command[], unsigned short spi_data[])
 {
-	unsigned short spi_command[11];
-	unsigned short data[11];
     unsigned short trigger_mask_commands[32];
     
     // Setting Trigger Mask from file trigger_mask
@@ -492,66 +479,63 @@ void set_trigger_mask(unsigned short trigger_mask[])
     spi_command[8] = trigger_mask_commands[6];
     spi_command[9] = trigger_mask_commands[7];			
     spi_command[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_command, data);
+    transfer_message(spi_command, spi_data);
     for (int i = 0; i < 8; i++) {
-        trigger_mask[i] = data[i + 2];
+        trigger_mask[i] = spi_data[i + 2];
     }
 
-    spi_command[0] = SPI_SOM_TFPGA; //som
-    spi_command[1] = SPI_TRIGGERMASK1_TFPGA; //cw
-    spi_command[2] = trigger_mask_commands[8];
-    spi_command[3] = trigger_mask_commands[9];
-    spi_command[4] = trigger_mask_commands[10];
-    spi_command[5] = trigger_mask_commands[11];
-    spi_command[6] = trigger_mask_commands[12];
-    spi_command[7] = trigger_mask_commands[13];
-    spi_command[8] = trigger_mask_commands[14];
-    spi_command[9] = trigger_mask_commands[15];			
-    spi_command[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_command, data);
+    spi_command[11] = SPI_SOM_TFPGA; //som
+    spi_command[12] = SPI_TRIGGERMASK1_TFPGA; //cw
+    spi_command[13] = trigger_mask_commands[8];
+    spi_command[14] = trigger_mask_commands[9];
+    spi_command[15] = trigger_mask_commands[10];
+    spi_command[16] = trigger_mask_commands[11];
+    spi_command[17] = trigger_mask_commands[12];
+    spi_command[18] = trigger_mask_commands[13];
+    spi_command[19] = trigger_mask_commands[14];
+    spi_command[20] = trigger_mask_commands[15];			
+    spi_command[21] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command + 11, spi_data + 11);
     for (int i = 0; i < 8; i++) {
-        trigger_mask[i + 8] = data[i + 2];
+        trigger_mask[i + 8] = spi_data[i + 13];
     }
     
-    spi_command[0] = SPI_SOM_TFPGA; //som
-    spi_command[1] = SPI_TRIGGERMASK2_TFPGA; //cw
-    spi_command[2] = trigger_mask_commands[16];
-    spi_command[3] = trigger_mask_commands[17];
-    spi_command[4] = trigger_mask_commands[18];
-    spi_command[5] = trigger_mask_commands[19];
-    spi_command[6] = trigger_mask_commands[20];
-    spi_command[7] = trigger_mask_commands[21];
-    spi_command[8] = trigger_mask_commands[22];
-    spi_command[9] = trigger_mask_commands[23];			
-    spi_command[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_command, data);
+    spi_command[22] = SPI_SOM_TFPGA; //som
+    spi_command[23] = SPI_TRIGGERMASK2_TFPGA; //cw
+    spi_command[24] = trigger_mask_commands[16];
+    spi_command[25] = trigger_mask_commands[17];
+    spi_command[26] = trigger_mask_commands[18];
+    spi_command[27] = trigger_mask_commands[19];
+    spi_command[28] = trigger_mask_commands[20];
+    spi_command[29] = trigger_mask_commands[21];
+    spi_command[30] = trigger_mask_commands[22];
+    spi_command[31] = trigger_mask_commands[23];			
+    spi_command[32] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command + 22, spi_data + 22);
     for (int i = 0; i < 8; i++) {
-        trigger_mask[i + 16] = data[i + 2];
+        trigger_mask[i + 16] = spi_data[i + 24];
     }
     
-    spi_command[0] = SPI_SOM_TFPGA; //som
-    spi_command[1] = SPI_TRIGGERMASK3_TFPGA; //cw
-    spi_command[2] = trigger_mask_commands[24];
-    spi_command[3] = trigger_mask_commands[25];
-    spi_command[4] = trigger_mask_commands[26];
-    spi_command[5] = trigger_mask_commands[27];
-    spi_command[6] = trigger_mask_commands[28];
-    spi_command[7] = trigger_mask_commands[29];
-    spi_command[8] = trigger_mask_commands[30];
-    spi_command[9] = trigger_mask_commands[31];			
-    spi_command[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_command, data);
+    spi_command[33] = SPI_SOM_TFPGA; //som
+    spi_command[34] = SPI_TRIGGERMASK3_TFPGA; //cw
+    spi_command[35] = trigger_mask_commands[24];
+    spi_command[36] = trigger_mask_commands[25];
+    spi_command[37] = trigger_mask_commands[26];
+    spi_command[38] = trigger_mask_commands[27];
+    spi_command[39] = trigger_mask_commands[28];
+    spi_command[40] = trigger_mask_commands[29];
+    spi_command[41] = trigger_mask_commands[30];
+    spi_command[42] = trigger_mask_commands[31];			
+    spi_command[43] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command + 33, spi_data + 33);
     for (int i = 0; i < 8; i++) {
-        trigger_mask[i + 24] = data[i + 2];
+        trigger_mask[i + 24] = spi_data[i + 35];
     }
 }
 
 // Send sync commands
-void sync()
+void sync(unsigned short spi_command[], unsigned short spi_data[])
 {
-	unsigned short spi_command[11];
-	unsigned short data[11];
-    
     // Setup SYNC message.
     // Must do a SYNC before TAACK messages will be effective
     /* If Target module has already been synced, sending a SYNC message will
@@ -568,28 +552,40 @@ void sync()
     spi_command[8] = 0x0000;
     spi_command[9] = 0x0000;			
     spi_command[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_command, data);
+    transfer_message(spi_command, spi_data);
     sleep_msec(10);
     
     // Set a time to send the SYNC message
-    spi_command[0] = SPI_SOM_TFPGA; //som
-    spi_command[1] = SPI_SET_TRIG_AT_TIME; //cw
-    spi_command[2] = 0x0000;
-    spi_command[3] = 0x0000;
-    spi_command[4] = 0x0001; // A short time after 0
-    spi_command[5] = 0x0004; //RichW0x0000;
+    spi_command[11] = SPI_SOM_TFPGA; //som
+    spi_command[12] = SPI_SET_TRIG_AT_TIME; //cw
+    spi_command[13] = 0x0000;
+    spi_command[14] = 0x0000;
+    spi_command[15] = 0x0001; // A short time after 0
+    spi_command[16] = 0x0004; //RichW0x0000;
+    spi_command[17] = 0x0000;
+    spi_command[18] = 0x0000;
+    spi_command[19] = 0x0000;
+    spi_command[20] = 0x0000;			
     // ?? Need a 4 because time in message ends up one tick behind
     // A bug to be investigated in the TFPGA gate array HDL.
     // Also the time has to have 3 LSBs 000
-    spi_command[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_command, data);
+    spi_command[21] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command + 11, spi_data + 11);
     sleep_msec(10);
     
     // Reset the nsTimer to 0
-    spi_command[0] = SPI_SOM_TFPGA; //som
-    spi_command[1] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
-    spi_command[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_command, data);
+    spi_command[22] = SPI_SOM_TFPGA; //som
+    spi_command[23] = RESET_TRIGGER_COUNT_AND_NSTIMER; //cw
+    spi_command[24] = 0x0000;
+    spi_command[25] = 0x0000;
+    spi_command[26] = 0x0001; // A short time after 0
+    spi_command[27] = 0x0004; //RichW0x0000;
+    spi_command[28] = 0x0000;
+    spi_command[29] = 0x0000;
+    spi_command[30] = 0x0000;
+    spi_command[31] = 0x0000;			
+    spi_command[32] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command + 22, spi_data + 22);
     sleep_msec(10);
     
     // The TFPGA will send the SYNC message when nsTimer reaches the time set
@@ -597,9 +593,16 @@ void sync()
     
     // Set TYPE and MODE back in anticipation of sending a TACK
     // Setting TYPE (00) and MODE (00) so subsequent message are TACKs
-    spi_command[0] = SPI_SOM_TFPGA; //som
-    spi_command[1] = SPI_SET_TACK_TYPE_MODE; //cw
-    spi_command[2] = 0x0000; // TYPE 00 MODE 00
-    spi_command[10] = SPI_EOM_TFPGA; //not used
-    transfer_message(spi_command, data);
+    spi_command[33] = SPI_SOM_TFPGA; //som
+    spi_command[34] = SPI_SET_TACK_TYPE_MODE; //cw
+    spi_command[35] = 0x0000; // TYPE 00 MODE 00
+    spi_command[36] = 0x0000;
+    spi_command[37] = 0x0001; // A short time after 0
+    spi_command[38] = 0x0004; //RichW0x0000;
+    spi_command[39] = 0x0000;
+    spi_command[40] = 0x0000;
+    spi_command[41] = 0x0000;
+    spi_command[42] = 0x0000;			
+    spi_command[43] = SPI_EOM_TFPGA; //not used
+    transfer_message(spi_command + 33, spi_data + 33);
 }

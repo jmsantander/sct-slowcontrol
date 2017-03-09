@@ -28,12 +28,14 @@ Backplane::Backplane()
         data_buffer.add_trigger_mask(0);
     }
 
-    for (int i = 0; i < N_SPI; i++) {
+    for (int i = 0; i < N_SPI * N_MESSAGES; i++) {
         spi_command_[i] = 0;
         spi_data_[i] = 0;
         data_buffer.add_spi_command(0);
         data_buffer.add_spi_data(0);
     }
+
+    n_spi_messages_ = 0;
 
     for (int i = 0; i < N_COMMANDS; i++) {
         command_parameters_[i] = 0;
@@ -53,9 +55,15 @@ void Backplane::update_data(int command_code,
         case FEE_CURRENTS:
         {
             float fee_buffer[N_FEES];
+            unsigned short spi_command[N_SPI * N_MESSAGES] = {0};
+            unsigned short spi_data[N_SPI * N_MESSAGES] = {0};
             if (!simulation_mode) {
-                read_fee_data(command_code, fee_buffer);
+                read_fee_data(command_code, fee_buffer, spi_command, spi_data);
             } else {
+                for (int i = 0; i < N_SPI * 4; i++) {
+                    spi_command[i] = i;
+                    spi_data[i] = i;
+                }
                 simulate_fee_data(fee_buffer, N_FEES);
             }
             for (int i = 0; i < N_FEES; i++) {
@@ -67,34 +75,70 @@ void Backplane::update_data(int command_code,
                     data_buffer.set_current(i, currents_[i]);
                 }
             }
+            for (int i = 0; i < N_SPI * 4; i++) {
+                spi_command_[i] = spi_command[i];
+                spi_data_[i] = spi_data[i];
+                data_buffer.set_spi_command(i, spi_command_[i]);
+                data_buffer.set_spi_data(i, spi_data_[i]);
+            }
+            n_spi_messages_ = 4;
+            data_buffer.set_n_spi_messages(4);
             break;
         }
         case FEE_PRESENT:
         {
             unsigned short fees_present[N_FEES];
+            unsigned short spi_command[N_SPI * N_MESSAGES] = {0};
+            unsigned short spi_data[N_SPI * N_MESSAGES] = {0};
             if (!simulation_mode) {
-                read_fees_present(fees_present);
+                read_fees_present(fees_present, spi_command, spi_data);
             } else {
+                for (int i = 0; i < N_SPI; i++) {
+                    spi_command[i] = i;
+                    spi_data[i] = i;
+                }
                 simulate_fees_present(fees_present, N_FEES);
             }
             for (int i = 0; i < N_FEES; i++) {
                 present_[i] = fees_present[i];
                 data_buffer.set_present(i, present_[i]);
             }
+            for (int i = 0; i < N_SPI; i++) {
+                spi_command_[i] = spi_command[i];
+                spi_data_[i] = spi_data[i];
+                data_buffer.set_spi_command(i, spi_command_[i]);
+                data_buffer.set_spi_data(i, spi_data_[i]);
+            }
+            n_spi_messages_ = 1;
+            data_buffer.set_n_spi_messages(1);
             break;
         }
         case BP_SET_TRIGGER_MASK:
         {
             unsigned short trigger_mask[N_FEES];
+            unsigned short spi_command[N_SPI * N_MESSAGES] = {0};
+            unsigned short spi_data[N_SPI * N_MESSAGES] = {0};
             if (!simulation_mode) {
-                set_trigger_mask(trigger_mask);
+                set_trigger_mask(trigger_mask, spi_command, spi_data);
             } else {
+                for (int i = 0; i < N_SPI * 4; i++) {
+                    spi_command[i] = i;
+                    spi_data[i] = i;
+                }
                 simulate_trigger_mask(trigger_mask, N_FEES);
             }
             for (int i = 0; i < N_FEES; i++) {
                 trigger_mask_[i] = trigger_mask[i];
                 data_buffer.set_trigger_mask(i, trigger_mask_[i]);
             }
+            for (int i = 0; i < N_SPI * 4; i++) {
+                spi_command_[i] = spi_command[i];
+                spi_data_[i] = spi_data[i];
+                data_buffer.set_spi_command(i, spi_command_[i]);
+                data_buffer.set_spi_data(i, spi_data_[i]);
+            }
+            n_spi_messages_ = 4;
+            data_buffer.set_n_spi_messages(4);
             break;
         }
         case BP_SET_TRIGGER:
@@ -103,9 +147,10 @@ void Backplane::update_data(int command_code,
         case BP_SET_TACK_TYPE_AND_MODE:
         case BP_POWER_CONTROL_MODULES:
         case BP_READ_NSTIMER_TRIGGER_RATE:
+        case BP_RESET_TRIGGER_AND_NSTIMER:
         {
-            unsigned short spi_command[11];
-            unsigned short spi_data[11];
+            unsigned short spi_command[N_SPI * N_MESSAGES] = {0};
+            unsigned short spi_data[N_SPI * N_MESSAGES] = {0};
             if (!simulation_mode) {
                 if (command_code == BP_SET_TRIGGER) {
                     set_trigger(command_parameters, spi_command, spi_data);
@@ -122,6 +167,8 @@ void Backplane::update_data(int command_code,
                             spi_data);
                 } else if (command_code == BP_READ_NSTIMER_TRIGGER_RATE) {
                     read_nstimer_trigger_rate(spi_command, spi_data);
+                } else if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
+                    reset_trigger_and_nstimer(spi_command, spi_data);
                 }
             } else {
                 // simulate
@@ -146,6 +193,9 @@ void Backplane::update_data(int command_code,
                 } else if (command_code == BP_READ_NSTIMER_TRIGGER_RATE) {
                     std::cout << "Simulating reading nstimer and " 
                         << "trigger rate..." << std::endl;
+                } else if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
+                    std::cout << "Simulating resetting trigger and nstimer..."
+                        << std::endl;
                 }
             }
             for (int i = 0; i < N_SPI; i++) {
@@ -154,25 +204,32 @@ void Backplane::update_data(int command_code,
                 data_buffer.set_spi_command(i, spi_command_[i]);
                 data_buffer.set_spi_data(i, spi_data_[i]);
             }
+            n_spi_messages_ = 1;
+            data_buffer.set_n_spi_messages(1);
             break;
         }
-        case BP_RESET_TRIGGER_AND_NSTIMER:
         case BP_SYNC:
         {
+            unsigned short spi_command[N_SPI * N_MESSAGES] = {0};
+            unsigned short spi_data[N_SPI * N_MESSAGES] = {0};
             if (!simulation_mode) {
-                if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
-                    reset_trigger_and_nstimer();
-                } else if (command_code == BP_SYNC) {
-                    sync();
-                }
+                sync(spi_command, spi_data);
             } else {
-                if (command_code == BP_RESET_TRIGGER_AND_NSTIMER) {
-                    std::cout << "Simulating resetting trigger and nstimer..."
-                        << std::endl;
-                } else if (command_code == BP_SYNC) {
-                    std::cout << "Simulating syncing..." << std::endl;
+                // simulate
+                for (int i = 0; i < N_SPI * 4; i++) {
+                    spi_command[i] = i;
+                    spi_data[i] = i;
                 }
+                std::cout << "Simulating syncing..." << std::endl;
             }
+            for (int i = 0; i < N_SPI * 4; i++) {
+                spi_command_[i] = spi_command[i];
+                spi_data_[i] = spi_data[i];
+                data_buffer.set_spi_command(i, spi_command_[i]);
+                data_buffer.set_spi_data(i, spi_data_[i]);
+            }
+            n_spi_messages_ = 4;
+            data_buffer.set_n_spi_messages(4);
             break;
         }
         default:
@@ -273,10 +330,11 @@ bool Backplane::synchronize_network(Network_info &netinfo)
                         present_[i] = data_buffer.present(i);
                         trigger_mask_[i] = data_buffer.trigger_mask(i);
                     }
-                    for (int i = 0; i < N_SPI; i++) {
+                    for (int i = 0; i < N_SPI * N_MESSAGES; i++) {
                         spi_command_[i] = data_buffer.spi_command(i);
                         spi_data_[i] = data_buffer.spi_data(i);
                     }
+                    n_spi_messages_ = data_buffer.n_spi_messages();
                 }
             }
             break;

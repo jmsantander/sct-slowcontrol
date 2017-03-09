@@ -4,12 +4,13 @@ package slow_control;
 
 message Backplane_data {
     optional int32 command_code = 1;
-    repeated int32 spi_command = 2;
-    repeated int32 spi_data = 3;
-    repeated float voltage = 4;
-    repeated float current = 5;
-    repeated int32 present = 6;
-    repeated int32 trigger_mask = 7;
+    optional int32 n_spi_messages = 2;
+    repeated int32 spi_command = 3;
+    repeated int32 spi_data = 4;
+    repeated float voltage = 5;
+    repeated float current = 6;
+    repeated int32 present = 7;
+    repeated int32 trigger_mask = 8;
 }
 
 message Backplane_settings {
