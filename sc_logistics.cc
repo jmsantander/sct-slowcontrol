@@ -7,8 +7,15 @@
 #include <ctime>
 #include <algorithm>
 
+#include "mysql_connection.h"
+#include <cppconn/driver.h>
+#include <cppconn/statement.h>
+
 #include "sc_logistics.h"
 #include "sc_protobuf.pb.h"
+
+// Database password for user root
+std::string db_password = "";
 
 // Split a string into component words using the specified delimiter
 void split(const std::string &s, char delim, std::vector<std::string> &words)
@@ -99,6 +106,30 @@ void display_spi_data(unsigned short spi_data[])
     std::cout << "\033[1;34m" << std::hex << std::setw(4) << spi_data[10]
         << "\033[0m " << std::endl << std::endl;
     std::cout << std::setfill(' '); // clear fill
+}
+
+// Get database password from user
+void get_database_credentials()
+{
+    sql::Driver *driver;
+    sql::Connection *con;
+    
+    driver = get_driver_instance();
+    
+    while (true) {
+        std::cout << "Enter database password for user root: ";
+        std::cin >> db_password;
+        try {
+            con = driver->connect("localhost", "root", db_password);
+            break;
+        } catch (sql::SQLException e) {
+            std::cout << "Access denied. Try again." << std::endl;
+        }
+    }
+
+    std::cout << "Database credentials confirmed." << std::endl;
+
+    delete con;
 }
                                     
 // Log a data message

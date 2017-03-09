@@ -5,11 +5,15 @@
 #include <string>
 
 #include "sc_network.h"
+#include "sc_logistics.h"
 
 int main(void)
 {
     // Set up networking info
     Network_info netinfo(SERVER);
+
+    // Get database password from user
+    get_database_credentials();
     
     // Update network
     while (true) {

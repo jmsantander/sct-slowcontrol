@@ -1,5 +1,5 @@
 CXXFLAGS += -Wall -g
-LDFLAGS += -lprotobuf -lbcm2835
+LDFLAGS += -lprotobuf -lbcm2835 -lmysqlcppconn
 
 all: slow_control_pi slow_control_server slow_control_interface
 

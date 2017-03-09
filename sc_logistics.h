@@ -36,5 +36,8 @@ void simulate_trigger_mask(unsigned short trigger_mask[], const int n_fees);
 // Display SPI data
 void display_spi_data(unsigned short spi_data[]);
 
+// Get database password for user root
+void get_database_credentials();
+
 // Log a data message
 void log_data_message(std::string message);
