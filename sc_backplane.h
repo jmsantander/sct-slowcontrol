@@ -8,11 +8,6 @@
 #include "sc_network.h"
 #include "sc_logistics.h"
 
-#define N_FEES 32 // number of FEEs
-#define N_COMMANDS 4 // number of commands for sending settings
-#define N_SPI 11 // length of an SPI data array
-#define N_MESSAGES 4 // maximum number of SPI messages from a single command
-
 class Backplane
 {
 private:

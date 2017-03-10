@@ -1,4 +1,8 @@
 // Functions for slow control logistics, including logging
+// Includes defines used by all files
+
+#ifndef SC_LOGISTICS
+#define SC_LOGISTICS
 
 #include <string>
 
@@ -16,6 +20,11 @@
 #define BP_POWER_CONTROL_MODULES 10
 #define BP_SYNC 11
 #define BP_SET_TRIGGER_MASK 12
+
+#define N_FEES 32 // number of FEEs
+#define N_COMMANDS 4 // number of commands for sending settings
+#define N_SPI 11 // length of an SPI data array
+#define N_MESSAGES 4 // maximum number of SPI messages from a single command
 
 // Read in and store a command from the user from stdin
 // Return true if the command is valid, false otherwise
@@ -41,3 +50,5 @@ void get_database_credentials();
 
 // Log a data message
 void log_data_message(std::string message);
+
+#endif

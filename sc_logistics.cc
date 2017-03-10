@@ -184,10 +184,10 @@ void log_data_message(std::string message)
     sql::Statement *stmt;
     sql::PreparedStatement *pstmt;
     sql::ResultSet *res;
-    
+   
+    // Connect to database
     driver = get_driver_instance();
     con = driver->connect("localhost", "root", db_password);
-    
     stmt = con->createStatement();
     stmt->execute("USE test");
   
@@ -202,25 +202,72 @@ void log_data_message(std::string message)
     res->next();
     int id = res->getInt("id");
     delete res;
-
+    delete stmt;
+    
     // Log SPI data
     pstmt = con->prepareStatement("INSERT INTO spi(id, spi_index,\
             spi_message_index, spi_command, spi_data) VALUES (?, ?, ?, ?, ?)");
     for (int spi_message_index = 0; spi_message_index < data.n_spi_messages();
             spi_message_index++) {
-        for (int spi_index = 0; spi_index < 11; spi_index++) {
+        for (int spi_index = 0; spi_index < N_SPI; spi_index++) {
             pstmt->setInt(1, id);
             pstmt->setInt(2, spi_index);
             pstmt->setInt(3, spi_message_index);
-            pstmt->setInt(4, data.spi_command(spi_message_index * 11 +
+            pstmt->setInt(4, data.spi_command(spi_message_index * N_SPI +
                         spi_index));
-            pstmt->setInt(5, data.spi_data(spi_message_index * 11 +
+            pstmt->setInt(5, data.spi_data(spi_message_index * N_SPI +
                         spi_index));
             pstmt->executeUpdate();
         }
     }
     delete pstmt;
     
-    delete stmt;
+    // Log additional data if required by command
+    if (data.command_code() == FEE_VOLTAGES) {
+        // Log FEE voltages
+        pstmt = con->prepareStatement("INSERT INTO fee_voltage(id, fee_index,\
+                voltage) VALUES (?, ?, ?)");
+        for (int fee_index = 0; fee_index < N_FEES; fee_index++) {
+            pstmt->setInt(1, id);
+            pstmt->setInt(2, fee_index);
+            pstmt->setDouble(3, data.voltage(fee_index));
+            pstmt->executeUpdate();
+        }
+        delete pstmt;
+    } else if (data.command_code() == FEE_CURRENTS) {
+        // Log FEE currents
+        pstmt = con->prepareStatement("INSERT INTO fee_current(id, fee_index,\
+                current) VALUES (?, ?, ?)");
+        for (int fee_index = 0; fee_index < N_FEES; fee_index++) {
+            pstmt->setInt(1, id);
+            pstmt->setInt(2, fee_index);
+            pstmt->setDouble(3, data.current(fee_index));
+            pstmt->executeUpdate();
+        }
+        delete pstmt;
+    } else if (data.command_code() == FEE_PRESENT) {
+        // Log modules present
+        pstmt = con->prepareStatement("INSERT INTO fee_present(id, fee_index,\
+                present) VALUES (?, ?, ?)");
+        for (int fee_index = 0; fee_index < N_FEES; fee_index++) {
+            pstmt->setInt(1, id);
+            pstmt->setInt(2, fee_index);
+            pstmt->setInt(3, data.present(fee_index));
+            pstmt->executeUpdate();
+        }
+        delete pstmt;
+    } else if (data.command_code() == BP_SET_TRIGGER_MASK) {
+        // Log trigger mask
+        pstmt = con->prepareStatement("INSERT INTO trigger_mask(id, fee_index,\
+                mask) VALUES (?, ?, ?)");
+        for (int fee_index = 0; fee_index < N_FEES; fee_index++) {
+            pstmt->setInt(1, id);
+            pstmt->setInt(2, fee_index);
+            pstmt->setInt(3, data.trigger_mask(fee_index));
+            pstmt->executeUpdate();
+        }
+        delete pstmt;
+    }
+    
     delete con;
 }
