@@ -9,7 +9,10 @@
 
 #include "mysql_connection.h"
 #include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/resultset.h>
 #include <cppconn/statement.h>
+#include <cppconn/prepared_statement.h>
 
 #include "sc_logistics.h"
 #include "sc_protobuf.pb.h"
@@ -108,6 +111,41 @@ void display_spi_data(unsigned short spi_data[])
     std::cout << std::setfill(' '); // clear fill
 }
 
+// Return string (for logging) corresponding to the code for a command
+std::string command_string(int command_code)
+{
+    switch(command_code) {
+        case BP_NONE:
+            return "none";
+        case FEE_VOLTAGES:
+            return "read_voltages";
+        case FEE_CURRENTS:
+            return "read_currents";
+        case FEE_PRESENT:
+            return "read_modules_present";
+        case BP_SET_TRIGGER_MASK:
+            return "set_trigger_mask";
+        case BP_RESET_TRIGGER_AND_NSTIMER:
+            return "reset_trigger_and_nstimer";
+        case BP_SYNC:
+            return "sync";
+        case BP_SET_HOLDOFF_TIME:
+            return "set_holdoff_time";
+        case BP_SET_TACK_TYPE_AND_MODE:
+            return "set_tack_type_and_mode";
+        case BP_POWER_CONTROL_MODULES:
+            return "power_control_modules";
+        case BP_SET_TRIGGER:
+            return "set_trigger";
+        case BP_READ_NSTIMER_TRIGGER_RATE:
+            return "read_nstimer_trigger_rate";
+        case BP_ENABLE_DISABLE_TRIGGER:
+            return "enable_disable_trigger";
+        default:
+            return "";
+    }
+}
+
 // Get database password from user
 void get_database_credentials()
 {
@@ -140,87 +178,49 @@ void log_data_message(std::string message)
         std::cerr << "Warning: could not parse data message" << std::endl;
         return;
     }
-    switch(data.command_code()) {
-        case BP_NONE:
-            break;
-        case FEE_VOLTAGES:
-        {
-            // Log command
-            std::cout << "LOG " << "fee_voltages" << std::endl;
-            // Log FEE voltages
-            break;
-        }
-        case FEE_CURRENTS:
-        {
-            // Log command
-            std::cout << "LOG " << "fee_currents" << std::endl;
-            // Log FEE currents
-            break;
-        }
-        case FEE_PRESENT:
-        {
-            // Log command
-            std::cout << "LOG " << "fee_present" << std::endl;
-            // Log FEEs present
-            break;
-        }
-        case BP_SET_TRIGGER_MASK:
-        {
-            // Log command
-            std::cout << "LOG " << "set_trigger_mask" << std::endl;
-            // Log trigger mask
-            break;
-        }
-        case BP_RESET_TRIGGER_AND_NSTIMER:
-        {
-            // Log command
-            std::cout << "LOG " << "reset_trigger_and_nstimer" << std::endl;
-            break;
-        }
-        case BP_SYNC:
-        {
-            // Log command
-            std::cout << "LOG " << "sync" << std::endl;
-            break;
-        }
-        case BP_SET_HOLDOFF_TIME:
-        {
-            // Log command
-            std::cout << "LOG " << "set_holdoff_time" << std::endl;
-            break;
-        }
-        case BP_SET_TACK_TYPE_AND_MODE:
-        {
-            // Log command
-            std::cout << "LOG " << "set_tack_type_and_mode" << std::endl;
-            break;
-        }
-        case BP_POWER_CONTROL_MODULES:
-        {
-            // Log command
-            std::cout << "LOG " << "power_control_modules" << std::endl;
-            break;
-        }
-        case BP_SET_TRIGGER:
-        {
-            // Log command
-            std::cout << "LOG " << "set_trigger" << std::endl;
-            // Log SPI
-            break;
-        }
-        case BP_READ_NSTIMER_TRIGGER_RATE:
-        {
-            // Log command
-            std::cout << "LOG " << "read_nstimer_trigger_rate" << std::endl;
-            // Log SPI
-            break;
-        }
-        case BP_ENABLE_DISABLE_TRIGGER:
-        {
-            // Log command
-            std::cout << "LOG " << "enable_disable_trigger" << std::endl;
-            // Log SPI
-            break;
+    
+    sql::Driver *driver;
+    sql::Connection *con;
+    sql::Statement *stmt;
+    sql::PreparedStatement *pstmt;
+    sql::ResultSet *res;
+    
+    driver = get_driver_instance();
+    con = driver->connect("localhost", "root", db_password);
+    
+    stmt = con->createStatement();
+    stmt->execute("USE test");
+  
+    // Log command name
+    pstmt = con->prepareStatement("INSERT INTO main(command) VALUES (?)");
+    pstmt->setString(1, command_string(data.command_code()));
+    pstmt->execute();
+    delete pstmt;
+
+    // Get id for synchronizing tables
+    res = stmt->executeQuery("SELECT LAST_INSERT_ID() AS 'id'");
+    res->next();
+    int id = res->getInt("id");
+    delete res;
+
+    // Log SPI data
+    pstmt = con->prepareStatement("INSERT INTO spi(id, spi_index,\
+            spi_message_index, spi_command, spi_data) VALUES (?, ?, ?, ?, ?)");
+    for (int spi_message_index = 0; spi_message_index < data.n_spi_messages();
+            spi_message_index++) {
+        for (int spi_index = 0; spi_index < 11; spi_index++) {
+            pstmt->setInt(1, id);
+            pstmt->setInt(2, spi_index);
+            pstmt->setInt(3, spi_message_index);
+            pstmt->setInt(4, data.spi_command(spi_message_index * 11 +
+                        spi_index));
+            pstmt->setInt(5, data.spi_data(spi_message_index * 11 +
+                        spi_index));
+            pstmt->executeUpdate();
         }
     }
+    delete pstmt;
+    
+    delete stmt;
+    delete con;
 }
