@@ -17,7 +17,8 @@
 #include "sc_logistics.h"
 #include "sc_protobuf.pb.h"
 
-// Database password for user root
+// Database credentials
+std::string db_username = "";
 std::string db_password = "";
 
 // Split a string into component words using the specified delimiter
@@ -146,19 +147,21 @@ std::string command_string(int command_code)
     }
 }
 
-// Get database password from user
+// Get database username and password from user
 void get_database_credentials()
 {
     sql::Driver *driver;
     sql::Connection *con;
     
     driver = get_driver_instance();
-    
+
     while (true) {
-        std::cout << "Enter database password for user root: ";
+        std::cout << "Enter database username: ";
+        std::cin >> db_username;
+        std::cout << "Enter database password for user " << db_username << ": ";
         std::cin >> db_password;
         try {
-            con = driver->connect("localhost", "root", db_password);
+            con = driver->connect("localhost", db_username, db_password);
             break;
         } catch (sql::SQLException e) {
             std::cout << "Access denied. Try again." << std::endl;
@@ -187,7 +190,7 @@ void log_data_message(std::string message)
    
         // Connect to database
         driver = get_driver_instance();
-        con = driver->connect("localhost", "root", db_password);
+        con = driver->connect("localhost", db_username, db_password);
         stmt = con->createStatement();
         stmt->execute("USE test");
   
