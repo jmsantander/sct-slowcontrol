@@ -29,10 +29,4 @@
 // Sleep for a given number of milliseconds
 void sleep_msec(int msec);
 
-// Get database username and password
-void get_database_credentials();
-
-// Log a data message
-void log_data_message(std::string message);
-
 #endif
