@@ -4,8 +4,6 @@
 #ifndef SC_LOGISTICS
 #define SC_LOGISTICS
 
-#include <string>
-
 // Codes for updating data and settings on backplane
 #define BP_NONE 0
 #define FEE_VOLTAGES 1
