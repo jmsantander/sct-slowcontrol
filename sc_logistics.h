@@ -29,15 +29,6 @@
 // Sleep for a given number of milliseconds
 void sleep_msec(int msec);
 
-// Simulate reading FEE data, for testing without a real Pi
-void simulate_fee_data(float fee_buffer[], const int n_fees);
-
-// Simulate reading FEEs present, for testing without a real Pi
-void simulate_fees_present(unsigned short fees_present[], const int n_fees);
-
-// Simulate setting the trigger mask, for testing without a real Pi
-void simulate_trigger_mask(unsigned short trigger_mask[], const int n_fees);
-
 // Display SPI data
 void display_spi_data(unsigned short spi_data[]);
 

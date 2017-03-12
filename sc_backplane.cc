@@ -64,7 +64,10 @@ void Backplane::update_data(int command_code,
                     spi_command[i] = i;
                     spi_data[i] = i;
                 }
-                simulate_fee_data(fee_buffer, N_FEES);
+                sleep_msec(40);
+                for (int i = 0; i < N_FEES; i++) {
+	            	fee_buffer[i] = i;
+                }
             }
             for (int i = 0; i < N_FEES; i++) {
                 if (command_code == FEE_VOLTAGES) {
@@ -97,7 +100,9 @@ void Backplane::update_data(int command_code,
                     spi_command[i] = i;
                     spi_data[i] = i;
                 }
-                simulate_fees_present(fees_present, N_FEES);
+                for (int i = 0; i < N_FEES; i++) {
+                    fees_present[i] = i % 2;
+                }
             }
             for (int i = 0; i < N_FEES; i++) {
                 present_[i] = fees_present[i];
@@ -125,7 +130,9 @@ void Backplane::update_data(int command_code,
                     spi_command[i] = i;
                     spi_data[i] = i;
                 }
-                simulate_trigger_mask(trigger_mask, N_FEES);
+                for (int i = 0; i < N_FEES; i++) {
+                    trigger_mask[i] = i;
+                }
             }
             for (int i = 0; i < N_FEES; i++) {
                 trigger_mask_[i] = trigger_mask[i];

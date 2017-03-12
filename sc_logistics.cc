@@ -31,31 +31,6 @@ void sleep_msec(int msec)
     nanosleep(&tim, NULL);
 }
 
-// Simulate reading FEE data, for testing without a real Pi
-void simulate_fee_data(float fee_buffer[], const int n_fees)
-{
-    sleep_msec(40);
-    for (int i = 0; i < n_fees; i++) {
-		fee_buffer[i] = i;
-    }
-}
-
-// Simulate reading FEEs present, for testing without a real Pi
-void simulate_fees_present(unsigned short fees_present[], const int n_fees)
-{
-    for (int i = 0; i < n_fees; i++) {
-        fees_present[i] = i % 2;
-    }
-}
-
-// Simulate setting the trigger mask, for testing without a real Pi
-void simulate_trigger_mask(unsigned short trigger_mask[], const int n_fees)
-{
-    for (int i = 0; i < n_fees; i++) {
-        trigger_mask[i] = i;
-    }
-}
-
 // Display SPI data
 void display_spi_data(unsigned short spi_data[])
 {
