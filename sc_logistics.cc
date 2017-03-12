@@ -1,6 +1,7 @@
 // Implementation of slow control logistics functions
 
 #include <ctime>
+#include <algorithm>
 
 #include "sc_logistics.h"
 
