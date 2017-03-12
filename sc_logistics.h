@@ -29,9 +29,6 @@
 // Sleep for a given number of milliseconds
 void sleep_msec(int msec);
 
-// Display SPI data
-void display_spi_data(unsigned short spi_data[]);
-
 // Get database username and password
 void get_database_credentials();
 
