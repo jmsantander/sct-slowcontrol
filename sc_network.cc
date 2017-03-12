@@ -508,10 +508,6 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
         } else {
             // Successfully received the message
             iter->recv_status = MSG_DONE;
-            // If the server receives a (data) message from the Pi, log it
-            if ((netinfo.device == SERVER) && (iter->device == PI)) {
-                log_data_message(iter->message);
-            }
         }
     }
     // Send messages to connections as specified by device
