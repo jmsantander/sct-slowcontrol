@@ -2,6 +2,7 @@
 // Receive data from and transmit settings to the server
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <unistd.h>
 #include <limits>
@@ -9,6 +10,10 @@
 #include "sc_network.h"
 #include "sc_backplane.h"
 #include "sc_logistics.h"
+
+// Read in and store a command from the user from stdin
+// Return true if the command is valid, false otherwise
+bool read_command(std::string &command, std::string &value);
 
 int main(int argc, char *argv[])
 {
@@ -181,11 +186,48 @@ int main(int argc, char *argv[])
         backplane.update_settings(new_settings, settings_commands);
         backplane.synchronize_network(netinfo);
         // Get results of command
-        sleep_msec(100);
+        sleep_msec(200);
         backplane.synchronize_network(netinfo);
         // Display updated values
         backplane.print_data(new_settings);
     }
 
     return 0;
+}
+
+// Split a string into component words using the specified delimiter
+void split(const std::string &s, char delim, std::vector<std::string> &words)
+{
+    std::stringstream ss(s);
+    std::string word;
+    while (getline(ss, word, delim)) {
+        words.push_back(word);
+    }
+}
+
+// Read in and store a command from the user from stdin
+// Return true if the command is valid, false otherwise
+bool read_command(std::string &command, std::string &value)
+{
+    std::string s;
+    std::vector<std::string> words;
+
+    command = "";
+    value = "";
+
+    std::cout << "Enter command: ";
+
+    std::getline(std::cin, s);
+    split(s, ' ', words);
+
+    // Require either a single word command, or a word followed by a value
+    if ((words.size() < 1) || (words.size() > 2)) {
+        return false;
+    }
+    command = words[0];
+    if (words.size() == 2) {
+        value = words[1];
+    }
+
+    return true;
 }

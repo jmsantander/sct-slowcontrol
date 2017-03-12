@@ -26,10 +26,6 @@
 #define N_SPI 11 // length of an SPI data array
 #define N_MESSAGES 4 // maximum number of SPI messages from a single command
 
-// Read in and store a command from the user from stdin
-// Return true if the command is valid, false otherwise
-bool read_command(std::string &command, std::string &value);
-
 // Sleep for a given number of milliseconds
 void sleep_msec(int msec);
 
