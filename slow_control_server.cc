@@ -24,9 +24,9 @@ void log_data_message(std::string message, std::string db_host,
 int main(int argc, char *argv[])
 {
     // Parse command line arguments
-    if (argc != 4) {
-        std::cerr << "usage: slow_control_server db_host db_username\
-            db_password" << std::endl;
+    if (argc < 4) {
+        std::cout << "usage: slow_control_server db_host db_username " <<
+            "db_password" << std::endl;
         return 1;
     }
     std::string db_host = argv[1];
