@@ -142,7 +142,7 @@ bool connect_socket(int &sockfd, std::string port, std::string host_name)
 
         if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             close(sockfd);
-            perror("connect");
+            //perror("connect");
             continue;
         }
 
@@ -152,7 +152,7 @@ bool connect_socket(int &sockfd, std::string port, std::string host_name)
     freeaddrinfo(servinfo); // all done with this structure
     
     if (p == NULL) {
-        std::cerr << "failed to connect" << std::endl;
+        //std::cerr << "failed to connect" << std::endl;
         sockfd = INVALID_SOCKET;
         return false;
     }
