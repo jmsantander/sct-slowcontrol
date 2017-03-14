@@ -17,24 +17,25 @@
 #include "sc_logistics.h"
 #include "sc_protobuf.pb.h"
 
-// Get database username and password
-void get_database_credentials(std::string &db_username,
-        std::string &db_password);
-
 // Log a data message
-void log_data_message(std::string message, std::string db_username,
-        std::string db_password);
+void log_data_message(std::string message, std::string db_host,
+        std::string db_username, std::string db_password);
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    // Parse command line arguments
+    if (argc != 4) {
+        std::cerr << "usage: slow_control_server db_host db_username\
+            db_password" << std::endl;
+        return 1;
+    }
+    std::string db_host = argv[1];
+    std::string db_username = argv[2];
+    std::string db_password = argv[3];
+    
     // Set up networking info
     Network_info netinfo(SERVER);
 
-    // Get database username and password from user
-    std::string db_username = "";
-    std::string db_password = "";
-    get_database_credentials(db_username, db_password);
-    
     // Update network
     while (true) {
         update_network(netinfo);
@@ -43,7 +44,8 @@ int main(void)
                 netinfo.connections.begin(); iter != netinfo.connections.end();
                 ++iter) {
             if ((iter->device == PI) && (iter->recv_status == MSG_DONE)) {
-                log_data_message(iter->message, db_username, db_password);
+                log_data_message(iter->message, db_host, db_username,
+                        db_password);
             }
         }
     }
@@ -91,36 +93,9 @@ std::string command_string(int command_code)
     }
 }
 
-// Get database username and password from user
-void get_database_credentials(std::string &db_username,
-        std::string &db_password)
-{
-    sql::Driver *driver;
-    sql::Connection *con;
-    
-    driver = get_driver_instance();
-
-    while (true) {
-        std::cout << "Enter database username: ";
-        std::cin >> db_username;
-        std::cout << "Enter database password for user " << db_username << ": ";
-        std::cin >> db_password;
-        try {
-            con = driver->connect("localhost", db_username, db_password);
-            break;
-        } catch (sql::SQLException e) {
-            std::cout << "Access denied. Try again." << std::endl;
-        }
-    }
-
-    std::cout << "Database credentials confirmed." << std::endl;
-
-    delete con;
-}
-                                    
 // Log a data message
-void log_data_message(std::string message, std::string db_username,
-        std::string db_password)
+void log_data_message(std::string message, std::string db_host,
+        std::string db_username, std::string db_password)
 {
     slow_control::Backplane_data data;
     if (!data.ParseFromString(message)) {
@@ -136,7 +111,7 @@ void log_data_message(std::string message, std::string db_username,
    
         // Connect to database
         driver = get_driver_instance();
-        con = driver->connect("localhost", db_username, db_password);
+        con = driver->connect(db_host, db_username, db_password);
         stmt = con->createStatement();
         stmt->execute("USE test");
   

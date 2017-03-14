@@ -7,7 +7,9 @@ This software implements slow control for the CTA pSCT camera. Three programs ru
 This setup permits continuous slow control monitoring (in principle), allows for multiple users to connect simultaneously, and simplifies maintenance by centralizing logging.
 
 Primary author: Ari Brill, aryeh.brill@columbia.edu
+
 Contributing authors: Marcos Santander, Ori Weiner
+
 This project makes use of code by Phil Moore, Richard Bose, and Jim Buckley.
 
 ## Dependencies
@@ -38,19 +40,21 @@ sudo yum install mysql-devel
 
 ## Compilation
 
-In the directory containing the slow control code on the server computer (and any other computer which will run the user interface), run `make`.
+In the directory containing the slow control code on the server computer, run `make slow_control_server`.
 
 In the directory containing the slow control code on the Raspberry Pi, run `make slow_control_pi`.
 
-To remove all compiled code, run `make clean`.
+In the directory containing the slow control code where the user interface will be used, run `make slow_control_interface`.
+
+To compile all code, run `make`, to recompile run `make all`, and to remove all compiled code, run `make clean`.
 
 ## Use
 
-First, on the server computer, run `./slow_control_server` and enter the MySQL database username and password. The database must have been set up previously.
+First, on the server computer, run `./slow_control_server [db_host] [db_username] [db_password]`. The database must have been set up previously.
 
-Next, on the Pi, run `./slow_control_pi [hostname]` where [hostname] is the host address.
+Next, on the Pi, run `./slow_control_pi [hostname]` where [hostname] is the host address where the server program is running.
 
-To open and use the user interface, run `./slow_control_interface [hostname]` where [hostname] is again the host address, and enter commands on the command line.
+To open and use the user interface, run `./slow_control_interface [hostname]` where [hostname] is again the host address for the server program, and enter commands on the command line.
 
 ## Available Commands
 
