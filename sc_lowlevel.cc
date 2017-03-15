@@ -331,37 +331,37 @@ void read_fees_present(unsigned short fees_present[],
     // data[3] is FEEs present J16-31
     
     fees_present[0] = spi_data[2] & 0x0001;
-    fees_present[1] = spi_data[2] & 0x0002 >> 1;
-    fees_present[2] = spi_data[2] & 0x0004 >> 2;
-    fees_present[3] = spi_data[2] & 0x0008 >> 3;
-    fees_present[4] = spi_data[2] & 0x0010 >> 4;
-    fees_present[5] = spi_data[2] & 0x0020 >> 5;
-    fees_present[6] = spi_data[2] & 0x0040 >> 6;
-    fees_present[7] = spi_data[2] & 0x0080 >> 7;
-    fees_present[8] = spi_data[2] & 0x0100 >> 8;
-    fees_present[9] = spi_data[2] & 0x0200 >> 9;
-    fees_present[10] = spi_data[2] & 0x0400 >> 10;
-    fees_present[11] = spi_data[2] & 0x0800 >> 11;
-    fees_present[12] = spi_data[2] & 0x1000 >> 12;
-    fees_present[13] = spi_data[2] & 0x2000 >> 13;
-    fees_present[14] = spi_data[2] & 0x4000 >> 14;
-    fees_present[15] = spi_data[2] & 0x8000 >> 15;
+    fees_present[1] = (spi_data[2] & 0x0002) >> 1;
+    fees_present[2] = (spi_data[2] & 0x0004) >> 2;
+    fees_present[3] = (spi_data[2] & 0x0008) >> 3;
+    fees_present[4] = (spi_data[2] & 0x0010) >> 4;
+    fees_present[5] = (spi_data[2] & 0x0020) >> 5;
+    fees_present[6] = (spi_data[2] & 0x0040) >> 6;
+    fees_present[7] = (spi_data[2] & 0x0080) >> 7;
+    fees_present[8] = (spi_data[2] & 0x0100) >> 8;
+    fees_present[9] = (spi_data[2] & 0x0200) >> 9;
+    fees_present[10] = (spi_data[2] & 0x0400) >> 10;
+    fees_present[11] = (spi_data[2] & 0x0800) >> 11;
+    fees_present[12] = (spi_data[2] & 0x1000) >> 12;
+    fees_present[13] = (spi_data[2] & 0x2000) >> 13;
+    fees_present[14] = (spi_data[2] & 0x4000) >> 14;
+    fees_present[15] = (spi_data[2] & 0x8000) >> 15;
     fees_present[16] = spi_data[3] & 0x0001;
-    fees_present[17] = spi_data[3] & 0x0002 >> 1;
-    fees_present[18] = spi_data[3] & 0x0004 >> 2;
-    fees_present[19] = spi_data[3] & 0x0008 >> 3;
-    fees_present[20] = spi_data[3] & 0x0010 >> 4;
-    fees_present[21] = spi_data[3] & 0x0020 >> 5;
-    fees_present[22] = spi_data[3] & 0x0040 >> 6;
-    fees_present[23] = spi_data[3] & 0x0080 >> 7;
-    fees_present[24] = spi_data[3] & 0x0100 >> 8;
-    fees_present[25] = spi_data[3] & 0x0200 >> 9;
-    fees_present[26] = spi_data[3] & 0x0400 >> 10;
-    fees_present[27] = spi_data[3] & 0x0800 >> 11;
-    fees_present[28] = spi_data[3] & 0x1000 >> 12;
-    fees_present[29] = spi_data[3] & 0x2000 >> 13;
-    fees_present[30] = spi_data[3] & 0x4000 >> 14;
-    fees_present[31] = spi_data[3] & 0x8000 >> 15;
+    fees_present[17] = (spi_data[3] & 0x0002) >> 1;
+    fees_present[18] = (spi_data[3] & 0x0004) >> 2;
+    fees_present[19] = (spi_data[3] & 0x0008) >> 3;
+    fees_present[20] = (spi_data[3] & 0x0010) >> 4;
+    fees_present[21] = (spi_data[3] & 0x0020) >> 5;
+    fees_present[22] = (spi_data[3] & 0x0040) >> 6;
+    fees_present[23] = (spi_data[3] & 0x0080) >> 7;
+    fees_present[24] = (spi_data[3] & 0x0100) >> 8;
+    fees_present[25] = (spi_data[3] & 0x0200) >> 9;
+    fees_present[26] = (spi_data[3] & 0x0400) >> 10;
+    fees_present[27] = (spi_data[3] & 0x0800) >> 11;
+    fees_present[28] = (spi_data[3] & 0x1000) >> 12;
+    fees_present[29] = (spi_data[3] & 0x2000) >> 13;
+    fees_present[30] = (spi_data[3] & 0x4000) >> 14;
+    fees_present[31] = (spi_data[3] & 0x8000) >> 15;
 }
 
 // Read nstimer, tack count and rate, and trigger count and rate
