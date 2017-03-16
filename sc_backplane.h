@@ -1,12 +1,15 @@
-// sc_backplane.h
-// Header file containing classes for controlling and updating backplane info
+// sc_runcontrol.h
+// Header file containing the class for high-level run control
+// Lower level programs inherit from this, adding their specific functionality
 
 #ifndef SC_BACKPLANE
 #define SC_BACKPLANE
 
-#include "sc_protobuf.pb.h"
+#include <string>
+
 #include "sc_network.h"
 #include "sc_logistics.h"
+#include "sc_protobuf.pb.h"
 
 class Backplane
 {

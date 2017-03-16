@@ -23,6 +23,7 @@
 #include "sc_logistics.h"
 
 #define PI_PORT "31415" // the port Pi will connect to server on
+#define TM_PORT "41513" // the port TM will connect to server on
 #define GUI_PORT "51413" // the port GUI will connect to server on
 
 #define BACKLOG 10 // how many pending connections queue will hold
@@ -378,6 +379,14 @@ bool add_connection(Network_info &netinfo, int device)
             }
             break;
         }
+        case TM:
+        {
+            port = TM_PORT;
+            if (!connect_socket(sockfd, port, netinfo.host_name)) {
+                return false;
+            }
+            break;
+        }
         case SERVER:
         {
             // Accept connection from appropriate device
@@ -386,13 +395,18 @@ bool add_connection(Network_info &netinfo, int device)
                 if (!accept_socket(sockfd, netinfo.pi_listener, port)) {
                     return false;
                 }
+            } else if (device == TM) {
+                port = TM_PORT;
+                if (!accept_socket(sockfd, netinfo.tm_listener, port)) {
+                    return false;
+                }
             } else if (device == GUI) {
                 port = GUI_PORT;
                 if (!accept_socket(sockfd, netinfo.gui_listener, port)) {
                     return false;
                 }
             } else {
-                std::cout << "Error: server must connect to Pi or GUI"
+                std::cout << "Error: server must connect to Pi, TM, or GUI"
                     << std::endl;
                 return false;
             }
@@ -414,13 +428,14 @@ bool add_connection(Network_info &netinfo, int device)
 }
 
 /* Set up network and update netinfo, as needed for specified device 
- * Specify device as PI, SERVER, or GUI
+ * Specify device as PI, TM, SERVER, or GUI
  * Return true if setup successful, false if error */ 
 bool setup_network(Network_info &netinfo, int device)
 {
     switch (device) {
-        // Pi and GUI: connect to an open port on the server
+        // Pi, TM, and GUI: connect to an open port on the server
         case PI:
+        case TM:
         case GUI:
         {
             // Connect to a server if not already connected
@@ -432,16 +447,24 @@ bool setup_network(Network_info &netinfo, int device)
             }
             break;
         }
-        // Server: wait for incoming connections from Pi and GUIs
+        // Server: wait for incoming connections from Pi, TM, and GUIs
         case SERVER:
         {
-            bool could_not_connect = false; // must connect to both Pi and GUI
+            bool could_not_connect = false; // must connect to Pi, TM, and GUI
             // Connect to a Pi if not already connected
             if (count_connections(netinfo, PI) == 0) {
                 if (!add_connection(netinfo, PI)) {
                     could_not_connect = true;
                 } else {
                     std::cout << "connected to the Pi!" << std::endl;
+                }
+            }
+            // Connect to a TM if not already connected
+            if (count_connections(netinfo, TM) == 0) {
+                if (!add_connection(netinfo, TM)) {
+                    could_not_connect = true;
+                } else {
+                    std::cout << "connected to the TM Controller!" << std::endl;
                 }
             }
             // Connect to a GUI if not already connected
@@ -478,11 +501,15 @@ bool setup_network(Network_info &netinfo, int device)
  * Return false if error or connection closed
  * Return false if could not properly set up network */
 bool update_network(Network_info &netinfo, std::string outgoing_message,
-        int timeout)
+        int message_device, int timeout)
 {
     // Make sure network is properly set up
     if (!(setup_network(netinfo, netinfo.device))) {
-        return false;
+        if (netinfo.device != SERVER) {
+            // Ok for server if not all clients present
+            // Not ok for clients if server not present 
+            return false;
+        }
     }
     // Determine which connections are ready to read and write
     if (!poll_connections(netinfo, timeout)) {
@@ -512,8 +539,9 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
     }
     // Send messages to connections as specified by device
     switch (netinfo.device) {
-        // Pi or GUI: send message (data or settings) to server
+        // Pi, TM, or GUI: send message (variables or command) to server
         case PI:
+        case TM:
         case GUI:
         {
             // Skip sending if no outgoing message
@@ -545,42 +573,84 @@ bool update_network(Network_info &netinfo, std::string outgoing_message,
         // Server: send data to GUI and settings to Pi
         case SERVER:
         {
-            std::vector<Connection>::iterator iter_pi, iter_gui;
+            std::vector<Connection>::iterator iter_pi, iter_tm, iter_gui;
+            bool pi_present = false, tm_present = false;
             for (iter_pi = netinfo.connections.begin();
                     iter_pi != netinfo.connections.end(); ++iter_pi) {
                 if (iter_pi->device == PI) {
-                    for (iter_gui = netinfo.connections.begin();
-                            iter_gui != netinfo.connections.end();
-                            ++iter_gui) {
-                        if (iter_gui->device == GUI) {
-                            // Send data from Pi to GUI only if both ready
-                            if ((iter_pi->recv_status == MSG_DONE) &&
-                                    (iter_gui->send_status == MSG_READY)) {
-                                // Attempt to send the message
-                                if ((rv = send_message(iter_gui->socket,
-                                                iter_pi->message)) < 0) {
-                                    no_errors = false;
-                                    iter_gui->send_status = MSG_ERROR;
-                                } else {
-                                    // Successfully sent the message
-                                    iter_gui->send_status = MSG_DONE;
-                                }
-                            }
-                            // Send settings from GUI to Pi only if both ready
-                            if ((iter_gui->recv_status == MSG_DONE) &&
-                                    (iter_pi->send_status == MSG_READY)) {
-                                // Attempt to send the message
-                                if ((rv = send_message(iter_pi->socket,
-                                                iter_gui->message)) < 0) {
-                                    no_errors = false;
-                                    iter_pi->send_status = MSG_ERROR;
-                                } else {
-                                    // Successfully sent the message
-                                    iter_pi->send_status = MSG_DONE;
-                                }
+                    pi_present = true;
+                    break;
+                }
+            }
+            for (iter_tm = netinfo.connections.begin();
+                    iter_tm != netinfo.connections.end(); ++iter_tm) {
+                if (iter_tm->device == TM) {
+                    tm_present = true;
+                    break;
+                }
+            }
+            for (iter_gui = netinfo.connections.begin();
+                    iter_gui != netinfo.connections.end();
+                    ++iter_gui) {
+                if (iter_gui->device == GUI) {
+                    // Send variables from Pi and TM to GUI if they're ready
+                    if (iter_gui->send_status == MSG_READY) {
+                        // Attempt to send the message
+                        if (pi_present && (iter_pi->recv_status == MSG_DONE)) {
+                            if ((rv = send_message(iter_gui->socket,
+                                            iter_pi->message)) < 0) {
+                                no_errors = false;
+                                iter_gui->send_status = MSG_ERROR;
+                                break;
                             }
                         }
+                        if (tm_present && (iter_tm->recv_status == MSG_DONE)) {
+                            if ((rv = send_message(iter_gui->socket,
+                                            iter_tm->message)) < 0) {
+                                no_errors = false;
+                                iter_gui->send_status = MSG_ERROR;
+                                break;
+                            }
+                        } 
+                        // Successfully sent the message
+                        if ((pi_present &&
+                                    (iter_pi->recv_status == MSG_DONE)) ||
+                                (tm_present &&
+                                 (iter_tm->recv_status == MSG_DONE))) {
+                            // Update status if sent at least one message
+                            iter_gui->send_status = MSG_DONE;
+                        }
                     }
+                }
+            }
+            // Skip sending commands if no outgoing message
+            if (outgoing_message.empty()) {
+                break;
+            }
+            // Send message to the Pi if ready and is destination
+            if (pi_present && (iter_pi->send_status == MSG_READY) &&
+                    (message_device == PI)) {
+                // Attempt to send the message
+                if ((rv = send_message(iter_pi->socket,
+                                outgoing_message)) < 0) {
+                    no_errors = false;
+                    iter_pi->send_status = MSG_ERROR;
+                } else {
+                    // Successfully sent the message
+                    iter_pi->send_status = MSG_DONE;
+                }
+            }
+            // Send message to the TM controller if ready and is destination
+            if (tm_present && (iter_tm->send_status == MSG_READY) &&
+                    (message_device == TM)) {
+                // Attempt to send the message
+                if ((rv = send_message(iter_tm->socket,
+                                outgoing_message)) < 0) {
+                    no_errors = false;
+                    iter_tm->send_status = MSG_ERROR;
+                } else {
+                    // Successfully sent the message
+                    iter_tm->send_status = MSG_DONE;
                 }
             }
             break;
@@ -614,6 +684,11 @@ bool shutdown_network(Network_info &netinfo)
     // Close listeners if any
     if (netinfo.pi_listener != INVALID_SOCKET) {
         if (!close_socket(netinfo.pi_listener)) {
+            no_errors = false;
+        }
+    }
+    if (netinfo.tm_listener != INVALID_SOCKET) {
+        if (!close_socket(netinfo.tm_listener)) {
             no_errors = false;
         }
     }

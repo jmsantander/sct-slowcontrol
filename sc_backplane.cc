@@ -262,6 +262,13 @@ void Backplane::update_settings(int command_code,
 bool Backplane::synchronize_network(Network_info &netinfo)
 {
     switch (netinfo.device) {
+        case TM:
+        {
+            if (!update_network(netinfo)) {
+                return false;
+            }
+            break;
+        }
         case PI:
         {
             // Send data to and receive settings from server

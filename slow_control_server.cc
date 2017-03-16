@@ -35,7 +35,6 @@ int main(int argc, char *argv[])
     
     // Set up networking info
     Network_info netinfo(SERVER);
-
     // Update network
     while (true) {
         update_network(netinfo);
