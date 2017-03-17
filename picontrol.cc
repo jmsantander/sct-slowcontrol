@@ -6,7 +6,7 @@
 #include "picontrol.h"
 
 #include "sc_network.h"
-#include "sc_lowlevel.h"
+#include "backplane_lowlevel.h"
 
 bool PiControl::synchronize_network()
 {

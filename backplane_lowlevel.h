@@ -15,9 +15,13 @@ void enable_disable_trigger(unsigned short command_parameters[],
 void power_control_modules(unsigned short command_parameters[],
         unsigned short spi_command[], unsigned short spi_data[]);
 
-// Read in and store FEE housekeeping data
-void read_fee_data(int data_type, float fee_buffer[],
-        unsigned short spi_command[], unsigned short spi_data[]);
+// Read in and store FEE housekeeping currents
+void read_currents(float currents[], unsigned short spi_command[],
+        unsigned short spi_data[]);
+
+// Read in and store FEE housekeeping voltages
+void read_voltages(float voltages[], unsigned short spi_command[],
+        unsigned short spi_data[]);
 
 // Read in and store FEEs present
 void read_fees_present(unsigned short fees_present[],

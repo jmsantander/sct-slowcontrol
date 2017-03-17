@@ -11,7 +11,7 @@
 #include "runcontrol.h"
 #include "sc_network.h"
 #include "sc_protobuf.pb.h"
-#include "sc_lowlevel.h"
+#include "backplane_lowlevel.h"
 
 class PiControl: public RunControl {
 protected:

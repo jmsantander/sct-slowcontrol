@@ -5,8 +5,11 @@
 
 #include <cstdlib>
 #include <cstdio>
+
+#include <ctime>
+#include <algorithm>
+
 #include "bcm2835.h" // Driver for SPI chip
-#include "sc_logistics.h"
 
 /* Command Words */
 #define  SPI_WRAP_AROUND   	0x0000   /* cmd */
@@ -60,6 +63,17 @@
 // Conversion factors from SPI readout to units
 #define VOLT_CONVERSION_FACTOR 0.006158 // convert to volts
 #define AMP_CONVERSION_FACTOR 0.00117 // convert to amps
+
+// Sleep for a given number of milliseconds
+void sleep_msec(int msec)
+{
+    msec = std::min(msec, 999);
+    struct timespec tim;
+    tim.tv_sec = 0;
+    tim.tv_nsec = 1000000 * msec; // convert millisec to nanosec
+
+    nanosleep(&tim, NULL);
+}
 
 bool initialize_lowlevel()
 {
@@ -222,17 +236,12 @@ void power_control_modules(unsigned short command_parameters[],
     transfer_message(spi_command, spi_data);
 }
 
-// Read in and store FEE housekeeping data
-void read_fee_data(int data_type, float fee_buffer[],
-        unsigned short spi_command[], unsigned short spi_data[])
+// Read in and store FEE housekeeping currents
+void read_currents(float currents[], unsigned short spi_command[],
+        unsigned short spi_data[])
 {
     // Define conversion factor from SPI readout to meaningful unit
-    float cf = 1.0;
-    if (data_type == FEE_VOLTAGES) {
-        cf = VOLT_CONVERSION_FACTOR;
-    } else if (data_type == FEE_CURRENTS) {
-        cf = AMP_CONVERSION_FACTOR;
-    }
+    float cf = AMP_CONVERSION_FACTOR;
 	
     trig_adcs();
 
@@ -249,65 +258,134 @@ void read_fee_data(int data_type, float fee_buffer[],
 	    spi_command[mi*11 + 10] = SPI_EOM_HKFPGA; // not used
     }
     
-    if (data_type == FEE_VOLTAGES) {
-        spi_command[1] = CW_RD_FEE0_V;
-        spi_command[12] = CW_RD_FEE8_V;
-        spi_command[23] = CW_RD_FEE16_V;
-        spi_command[34] = CW_RD_FEE24_V;
-    } else if (data_type == FEE_CURRENTS) {
-        spi_command[1] = CW_RD_FEE0_I;
-        spi_command[12] = CW_RD_FEE8_I;
-        spi_command[23] = CW_RD_FEE16_I;
-        spi_command[34] = CW_RD_FEE24_I;
-    }
+    spi_command[1] = CW_RD_FEE0_I;
+    spi_command[12] = CW_RD_FEE8_I;
+    spi_command[23] = CW_RD_FEE16_I;
+    spi_command[34] = CW_RD_FEE24_I;
 	
     sleep_msec(10);
 	transfer_message(spi_command, spi_data);
 	
-    fee_buffer[5]  = spi_data[2] * cf;
-	fee_buffer[12] = spi_data[3] * cf;
-	fee_buffer[6]  = spi_data[4] * cf;
-	fee_buffer[17] = spi_data[5] * cf;
-	fee_buffer[7]  = spi_data[6] * cf;
-	fee_buffer[13] = spi_data[7] * cf;
-	fee_buffer[11] = spi_data[8] * cf;
-	fee_buffer[18] = spi_data[9] * cf;
+    currents[5]  = spi_data[2] * cf;
+	currents[12] = spi_data[3] * cf;
+	currents[6]  = spi_data[4] * cf;
+	currents[17] = spi_data[5] * cf;
+	currents[7]  = spi_data[6] * cf;
+	currents[13] = spi_data[7] * cf;
+	currents[11] = spi_data[8] * cf;
+	currents[18] = spi_data[9] * cf;
 		
 	sleep_msec(10);
 	transfer_message(spi_command + 11, spi_data + 11);
 	
-    fee_buffer[4]  = spi_data[13] * cf;
-	fee_buffer[10] = spi_data[14] * cf;
-	fee_buffer[1]  = spi_data[15] * cf;
-	fee_buffer[0]  = spi_data[16] * cf;
-	fee_buffer[3]  = spi_data[17] * cf;
-	fee_buffer[2]  = spi_data[18] * cf;
-	fee_buffer[16] = spi_data[19] * cf;
-	fee_buffer[22] = spi_data[20] * cf;
+    currents[4]  = spi_data[13] * cf;
+	currents[10] = spi_data[14] * cf;
+	currents[1]  = spi_data[15] * cf;
+	currents[0]  = spi_data[16] * cf;
+	currents[3]  = spi_data[17] * cf;
+	currents[2]  = spi_data[18] * cf;
+	currents[16] = spi_data[19] * cf;
+	currents[22] = spi_data[20] * cf;
 	
 	sleep_msec(10);
 	transfer_message(spi_command + 22, spi_data + 22);
 
-    fee_buffer[28] = spi_data[24] * cf;
-	fee_buffer[24] = spi_data[25] * cf;
-	fee_buffer[30] = spi_data[26] * cf;
-	fee_buffer[23] = spi_data[27] * cf;
-	fee_buffer[31] = spi_data[28] * cf;
-	fee_buffer[29] = spi_data[29] * cf;
-	fee_buffer[26] = spi_data[30] * cf;
-	fee_buffer[25] = spi_data[31] * cf;
+    currents[28] = spi_data[24] * cf;
+	currents[24] = spi_data[25] * cf;
+	currents[30] = spi_data[26] * cf;
+	currents[23] = spi_data[27] * cf;
+	currents[31] = spi_data[28] * cf;
+	currents[29] = spi_data[29] * cf;
+	currents[26] = spi_data[30] * cf;
+	currents[25] = spi_data[31] * cf;
 	
 	sleep_msec(10);
 	transfer_message(spi_command + 33, spi_data + 33);
 	
-    fee_buffer[20] = spi_data[35] * cf;
-	fee_buffer[8]  = spi_data[36] * cf;
-	fee_buffer[27] = spi_data[37] * cf;
-	fee_buffer[15] = spi_data[38] * cf;
-	fee_buffer[9]  = spi_data[39] * cf;
-	fee_buffer[19] = spi_data[40] * cf;
-	fee_buffer[21] = spi_data[41] * cf;
-	fee_buffer[14] = spi_data[42] * cf;
+    currents[20] = spi_data[35] * cf;
+	currents[8]  = spi_data[36] * cf;
+	currents[27] = spi_data[37] * cf;
+	currents[15] = spi_data[38] * cf;
+	currents[9]  = spi_data[39] * cf;
+	currents[19] = spi_data[40] * cf;
+	currents[21] = spi_data[41] * cf;
+	currents[14] = spi_data[42] * cf;
+}
+
+// Read in and store FEE housekeeping voltages
+void read_voltages(float voltages[], unsigned short spi_command[],
+        unsigned short spi_data[])
+{
+    // Define conversion factor from SPI readout to meaningful unit
+    float cf = VOLT_CONVERSION_FACTOR;
+	
+    trig_adcs();
+
+    for (int mi = 0; mi < 4; mi++) {    
+	    spi_command[mi*11 + 0] = SPI_SOM_HKFPGA; // som
+	    spi_command[mi*11 + 2] = 0x0111;
+	    spi_command[mi*11 + 3] = 0x1222;
+	    spi_command[mi*11 + 4] = 0x2333;
+	    spi_command[mi*11 + 5] = 0x3444;
+	    spi_command[mi*11 + 6] = 0x4555;
+	    spi_command[mi*11 + 7] = 0x5666;
+	    spi_command[mi*11 + 8] = 0x0000;
+	    spi_command[mi*11 + 9] = 0x0088;	
+	    spi_command[mi*11 + 10] = SPI_EOM_HKFPGA; // not used
+    }
+    
+    spi_command[1] = CW_RD_FEE0_V;
+    spi_command[12] = CW_RD_FEE8_V;
+    spi_command[23] = CW_RD_FEE16_V;
+    spi_command[34] = CW_RD_FEE24_V;
+	
+    sleep_msec(10);
+	transfer_message(spi_command, spi_data);
+	
+    voltages[5]  = spi_data[2] * cf;
+	voltages[12] = spi_data[3] * cf;
+	voltages[6]  = spi_data[4] * cf;
+	voltages[17] = spi_data[5] * cf;
+	voltages[7]  = spi_data[6] * cf;
+	voltages[13] = spi_data[7] * cf;
+	voltages[11] = spi_data[8] * cf;
+	voltages[18] = spi_data[9] * cf;
+		
+	sleep_msec(10);
+	transfer_message(spi_command + 11, spi_data + 11);
+	
+    voltages[4]  = spi_data[13] * cf;
+	voltages[10] = spi_data[14] * cf;
+	voltages[1]  = spi_data[15] * cf;
+	voltages[0]  = spi_data[16] * cf;
+	voltages[3]  = spi_data[17] * cf;
+	voltages[2]  = spi_data[18] * cf;
+	voltages[16] = spi_data[19] * cf;
+	voltages[22] = spi_data[20] * cf;
+	
+	sleep_msec(10);
+	transfer_message(spi_command + 22, spi_data + 22);
+
+    voltages[28] = spi_data[24] * cf;
+	voltages[24] = spi_data[25] * cf;
+	voltages[30] = spi_data[26] * cf;
+	voltages[23] = spi_data[27] * cf;
+	voltages[31] = spi_data[28] * cf;
+	voltages[29] = spi_data[29] * cf;
+	voltages[26] = spi_data[30] * cf;
+	voltages[25] = spi_data[31] * cf;
+	
+	sleep_msec(10);
+	transfer_message(spi_command + 33, spi_data + 33);
+	
+    voltages[20] = spi_data[35] * cf;
+	voltages[8]  = spi_data[36] * cf;
+	voltages[27] = spi_data[37] * cf;
+	voltages[15] = spi_data[38] * cf;
+	voltages[9]  = spi_data[39] * cf;
+	voltages[19] = spi_data[40] * cf;
+	voltages[21] = spi_data[41] * cf;
+	voltages[14] = spi_data[42] * cf;
 }
 
 // Determine which FEEs are present
