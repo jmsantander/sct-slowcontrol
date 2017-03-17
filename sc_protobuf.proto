@@ -2,7 +2,32 @@ syntax = 'proto2';
 
 package slow_control;
 
-message Backplane_data {
+message MessageWrapper {
+    enum Type {
+        RUN_SETTINGS = 1;
+        BP_VARS = 2;
+        TM_VARS = 3;
+        BP_CMD = 4;
+        TM_CMD = 5;
+    }
+
+    // Identifies which field is filled in
+    required Type type = 1;
+
+    // One of the following is filled in (corresponds to wrapped message type)
+    optional RunSettings run_settings = 2;
+    optional BackplaneVariables backplane_variables = 3;
+    optional TargetVariables target_variables = 4;
+    optional BackplaneCommand backplane_command = 5;
+    optional TargetCommand target_command = 6;
+}
+
+message RunSettings {
+    optional string highlevel_command = 1;
+    optional string highlevel_parameter = 2;
+}
+
+message BackplaneVariables {
     optional int32 command_code = 1;
     optional int32 n_spi_messages = 2;
     repeated int32 spi_command = 3;
@@ -13,7 +38,16 @@ message Backplane_data {
     repeated int32 trigger_mask = 8;
 }
 
-message Backplane_settings {
+message BackplaneCommand {
     optional int32 command_code = 1;
     repeated int32 command_parameter = 2;
+}
+
+message TargetVariables {
+    optional int32 test = 1;
+}
+
+message TargetCommand {
+    optional string command = 1;
+    optional string parameter = 2;
 }
