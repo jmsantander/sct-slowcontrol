@@ -8,13 +8,20 @@
 #include <unistd.h>
 #include <limits>
 
-#include "sc_network.h"
-#include "sc_backplane.h"
-#include "sc_logistics.h"
+#include <ctime>
+#include <algorithm>
+
+#include "interfacecontrol.h"
 
 // Read in and store a command from the user from stdin
 // Return true if the command is valid, false otherwise
 bool read_command(std::string &command, std::string &value);
+
+// Sleep for a given number of milliseconds
+void sleep_msec(int msec);
+
+// Print the data corresponding to a given command code
+void print_data(int data_type);
 
 int main(int argc, char *argv[])
 {
@@ -25,46 +32,35 @@ int main(int argc, char *argv[])
     }
     std::string hostname = argv[1];
     
-    // Make a Backplane object
-    Backplane backplane;
+    // Make an InterfaceControl object
+    InterfaceControl interface_control(hostname);
     
-    // Set up networking info
-    Network_info netinfo(GUI, hostname);
-
     // Communicate with the server: on each loop receive updated data and 
     // send updated settings
     std::cout << "communicating with the server...\n";
-    // Send and receive messages
-    backplane.synchronize_network(netinfo);
     std::string command, value;
-    int new_settings = BP_NONE;
-    unsigned short settings_commands[N_COMMANDS] = {};
-    unsigned long fee_power = 0; // for 'n' command to power control FEEs
     while (true) {
-        // Reinitialize settings values to defaults
-        new_settings = BP_NONE;
-        for (int i = 0; i < N_COMMANDS; i++) {
-            settings_commands[i] = 0;
-        }
+        // Send and receive messages
+        interface_control.synchronize_network();
         // Read in a command from the user
         read_command(command, value);
         // Execute the command
         if (command.compare("p") == 0) {
             // Read if FEEs present
-            std::cout << "Read FEEs present." << std::endl;
-            new_settings = FEE_PRESENT;
+            std::cout << "Read modules present." << std::endl;
+            interface_control.update_highlevel_command("read_modules_present");
         } else if (command.compare("v") == 0) {
             // Read FEE housekeeping voltages
             std::cout << "Read FEE voltages (V)." << std::endl;
-            new_settings = FEE_VOLTAGES;
+            interface_control.update_highlevel_command("read_module_voltages");
         } else if (command.compare("i") == 0) {
             // Read FEE currents
             std::cout << "Read FEE currents (A)." << std::endl;
-            new_settings = FEE_CURRENTS;
+            interface_control.update_highlevel_command("read_module_currents");
         } else if (command.compare("c") == 0) {
             // Monitor trigger rate
             std::cout << "Monitor trigger rate." << std::endl;
-            new_settings = BP_READ_NSTIMER_TRIGGER_RATE;
+            interface_control.update_highlevel_command("read_trigger_rate");
         } else if (command.compare("d") == 0) {
             // Set trigger at time
             std::cout << "Set trigger at time." << std::endl;
@@ -83,6 +79,7 @@ int main(int argc, char *argv[])
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cout << std::endl;
             new_settings = BP_SET_TRIGGER;
+            interface_control.update_highlevel_command("set_trigger");
         } else if (command.compare("g") == 0) {
             // Enable or disable trigger/TACK
             std::cout << "Enable or disable trigger/TACK." << std::endl;
@@ -173,8 +170,7 @@ int main(int argc, char *argv[])
         } else if (command.compare("x") == 0) {
             // Exit the GUI
             std::cout << "Exit." << std::endl;
-            // Shut down network first
-            if (!shutdown_network(netinfo))
+            if (!interface_control.exit())
                 return 1;
             break;
         } else if (command.compare("") == 0) {
@@ -184,16 +180,30 @@ int main(int argc, char *argv[])
             continue;
         }
         // Update and send settings
-        backplane.update_settings(new_settings, settings_commands);
-        backplane.synchronize_network(netinfo);
-        // Get results of command
+        interface_control.update_highlevel_command(command, value);
+        interface_control.synchronize_network();
         sleep_msec(200);
-        backplane.synchronize_network(netinfo);
+        interface_control.synchronize_network();
         // Display updated values
-        backplane.print_data(new_settings);
+        if (interface_control.backplane_variables_received()) {
+            print_data();
+        } else {
+            std::cout << "Still awaiting response..." << std::endl;
+        }
     }
-
+    
     return 0;
+}
+
+// Sleep for a given number of milliseconds
+void sleep_msec(int msec)
+{
+    msec = std::min(msec, 999);
+    struct timespec tim;
+    tim.tv_sec = 0;
+    tim.tv_nsec = 1000000 * msec; // convert millisec to nanosec
+
+    nanosleep(&tim, NULL);
 }
 
 // Split a string into component words using the specified delimiter
@@ -231,4 +241,169 @@ bool read_command(std::string &command, std::string &value)
     }
 
     return true;
+}
+
+// Display SPI data
+void display_spi_data()
+{
+    std::cout << " SOM  CMD DW 1 DW 2 DW 3 DW 4 DW 5 DW 6 DW 7 DW 8  EOM" 
+        << std::endl;
+    std::cout << std::setfill('0');
+    std::cout << "\033[1;34m" << std::hex << std::setw(4)
+        << backplane_variables_message().spi_data(0) << "\033[0m ";
+    std::cout << "\033[1;33m" << std::hex << std::setw(4)
+        << backplane_variables_message().spi_data(1) << "\033[0m ";
+    for (int i = 2; i < 10; i++) {
+        std::cout << std::hex << std::setw(4)
+            << backplane_variables_message().spi_data(i) << " ";
+    }
+    std::cout << "\033[1;34m" << std::hex << std::setw(4)
+        << backplane_variables_message().spi_data(10) << "\033[0m "
+        << std::endl << std::endl;
+    std::cout << std::setfill(' '); // clear fill
+}
+
+void print_data(int data_type)
+{
+    switch(data_type) {
+        case BP_NONE:
+        case BP_RESET_TRIGGER_AND_NSTIMER:
+        case BP_SYNC:
+        case BP_SET_HOLDOFF_TIME:
+        case BP_SET_TACK_TYPE_AND_MODE:
+        case BP_POWER_CONTROL_MODULES:
+            return;
+        case FEE_PRESENT:
+        {
+            for (int i = 0; i < N_FEES; i++) {
+                if (i == 0 || i == 28) {
+                    std::cout << "   " << std::setw(2)
+                        << backplane_variables_message().present(i) << " ";
+                } else if (i == 3 || i == 31) {
+                    std::cout << std::setw(2)
+                        << backplane_variables_message().present(i) << "   ";
+                } else {
+                    std::cout << std::setw(2)
+                        << backplane_variables_message().present(i) << " ";
+                }
+                if (i == 3 || i == 9 || i == 15 || i == 21 || i == 27 || 
+                        i == 31) {
+                    std::cout << std::endl;
+                }
+            }
+            std::cout << std::endl;
+            break;
+        }
+        case BP_SET_TRIGGER_MASK:
+        {
+            std::cout << std::setfill('0');
+            for (int i = 0; i < N_FEES; i++) {
+                if (i == 0 || i == 28) {
+                    std::cout << "     " << std::hex << std::setw(4)
+                        << backplane_variables_message().trigger_mask(i) << " ";
+                } else if (i == 3 || i == 31) {
+                    std::cout << std::hex << std::setw(4) 
+                        << backplane_variables_message().trigger_mask(i)
+                        << "     ";
+                } else {
+                    std::cout << std::hex << std::setw(4)
+                        << backplane_variables_message().trigger_mask(i) << " ";
+                }
+                if (i == 3 || i == 9 || i == 15 || i == 21 || i == 27 || 
+                        i == 31) {
+                    std::cout << std::endl;
+                }
+            }
+            std::cout << std::endl;
+            std::cout << std::setfill(' '); // clear fill
+            break;
+        }
+        case FEE_VOLTAGES:
+        {
+            std::cout << std::endl << "FEE voltages:" << std::endl;
+            std::cout << std::fixed << std::setprecision(2);
+            for (int i = 0; i < N_FEES; i++) {
+                if (i == 0 || i == 28) {
+                    std::cout << "      " << std::setw(5)
+                        << backplane_variables_message().voltage(i) << " ";
+                } else if (i == 3 || i == 31) {
+                    std::cout << std::setw(5)
+                        << backplane_variables_message().voltage(i) << "      ";
+                } else {
+                    std::cout << std::setw(5)
+                        << backplane_variables_message().voltage(i) << " ";
+                }
+                if (i == 3 || i == 9 || i == 15 || i == 21 || i == 27 || 
+                        i == 31) {
+                    std::cout << std::endl;
+                }
+            }
+            std::cout << std::endl;
+            break;
+        }
+        case FEE_CURRENTS:
+        {
+            std::cout << std::endl << "FEE currents:" << std::endl;
+            std::cout << std::fixed << std::setprecision(2);
+            for (int i = 0; i < N_FEES; i++) {
+                if (i == 0 || i == 28) {
+                    std::cout << "      " << std::setw(5)
+                        << backplane_variables_message().current(i) << " ";
+                } else if (i == 3 || i == 31) {
+                    std::cout << std::setw(5)
+                        << backplane_variables_message().current(i) << "      ";
+                } else {
+                    std::cout << std::setw(5)
+                        << backplane_variables_message().current(i) << " ";
+                }
+                if (i == 3 || i == 9 || i == 15 || i == 21 || i == 27 || 
+                        i == 31) {
+                    std::cout << std::endl;
+                }
+            }
+            std::cout << std::endl;
+            break;
+        }
+        case BP_SET_TRIGGER:
+        case BP_ENABLE_DISABLE_TRIGGER:
+        {
+            display_spi_data();
+            break;
+        }
+        case BP_READ_NSTIMER_TRIGGER_RATE:
+        {
+            unsigned long long nstimer;
+            unsigned long tack_count;
+            unsigned long trigger_count;
+            float tack_rate;
+            float trigger_rate;
+
+            nstimer = (((unsigned long long)
+                        backplane_variables_message().spi_data(2) << 48) |
+                    ((unsigned long long)
+                     backplane_variables_message().spi_data(3) << 32) |
+                    ((unsigned long long)
+                     backplane_variables_message().spi_data(4) << 16) |
+                    ((unsigned long long)
+                     backplane_variables_message().spi_data(5)));
+            //TFPGA adds one extra on reset
+            tack_count = ((backplane_variables_message().spi_data(6) << 16) |
+                    backplane_variables_message().spi_data(7)) - 1;
+            tack_rate = (float) nstimer / 1000000000;
+            tack_rate = tack_count / tack_rate;
+            trigger_count = ((backplane_variables_message().spi_data(8) << 16) |
+                    backplane_variables_message().spi_data(9)) - 1;
+            trigger_rate = (float) nstimer / 1000000000;
+            trigger_rate = trigger_count / trigger_rate;
+
+            display_spi_data();
+            printf("nsTimer %llu ns\n", nstimer);
+            printf("TACK Count %lu\n", tack_count);
+            printf("TACK Rate: %6.2f Hz\n", tack_rate);
+            // 4 phases or external trigger can HW trigger
+        	printf("Hardware Trigger Count %lu\n", trigger_count);
+        	printf("HW Trigger Rate: %6.2f Hz\n", trigger_rate);
+            break;
+        }
+    }
 }

@@ -10,7 +10,7 @@
 #define PI 0
 #define SERVER 1
 #define GUI 2
-#define TM 4
+#define TM 3
 
 // Status codes for sending and receiving messages
 #define MSG_STANDBY 0

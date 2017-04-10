@@ -24,6 +24,8 @@ bool InterfaceControl::synchronize_network()
     }
     // Store received data
     std::vector<Connection>::iterator iter;
+    // default: no message received
+    message_received = slow_control::MessageWrapper::NONE;
     for (iter = netinfo.connections.begin();
             iter != netinfo.connections.end(); ++iter) {
         if ((iter->device == SERVER) &&
@@ -37,9 +39,13 @@ bool InterfaceControl::synchronize_network()
                     case slow_control::MessageWrapper::BP_VARS:
                         backplane_variables =
                             message_wrap.backplane_variables();
+                        message_received =
+                            slow_control::MessageWrapper::BP_VARS;
                         break;
                     case slow_control::MessageWrapper::TM_VARS:
                         target_variables = message_wrap.target_variables();
+                        message_received =
+                            slow_control::MessageWrapper::TM_VARS;
                         break;
                     default:
                         std::cout << "Warning: data type not backplane "

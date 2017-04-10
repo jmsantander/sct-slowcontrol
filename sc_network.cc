@@ -20,7 +20,6 @@
 #include <algorithm>
 
 #include "sc_network.h"
-#include "sc_logistics.h"
 
 #define PI_PORT "31415" // the port Pi will connect to server on
 #define TM_PORT "41513" // the port TM will connect to server on

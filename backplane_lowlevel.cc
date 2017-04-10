@@ -201,7 +201,7 @@ void trig_adcs()
 }
 
 // Enable or disable trigger
-void enable_disable_trigger(unsigned short command_parameters[],
+int enable_disable_trigger(unsigned short command_parameters[],
         unsigned short spi_command[], unsigned short spi_data[])
 {
     spi_command[0] = SPI_SOM_TFPGA; //som
@@ -216,10 +216,11 @@ void enable_disable_trigger(unsigned short command_parameters[],
 	spi_command[9] = 0x0008;			
 	spi_command[10] = SPI_EOM_TFPGA; //not used
 	transfer_message(spi_command, spi_data);
+    return 1; // number of SPI messages sent
 }
 
 // Turn FEEs on and off
-void power_control_modules(unsigned short command_parameters[],
+int power_control_modules(unsigned short command_parameters[],
         unsigned short spi_command[], unsigned short spi_data[])
 {
     spi_command[0] = SPI_SOM_HKFPGA; //som
@@ -234,10 +235,11 @@ void power_control_modules(unsigned short command_parameters[],
     spi_command[9] = 0x7888;			
     spi_command[10] = SPI_EOM_HKFPGA; //not used
     transfer_message(spi_command, spi_data);
+    return 1; // number of SPI messages sent
 }
 
 // Read in and store FEE housekeeping currents
-void read_currents(float currents[], unsigned short spi_command[],
+int read_currents(float currents[], unsigned short spi_command[],
         unsigned short spi_data[])
 {
     // Define conversion factor from SPI readout to meaningful unit
@@ -310,10 +312,12 @@ void read_currents(float currents[], unsigned short spi_command[],
 	currents[19] = spi_data[40] * cf;
 	currents[21] = spi_data[41] * cf;
 	currents[14] = spi_data[42] * cf;
+    
+    return 4; // number of SPI messages sent
 }
 
 // Read in and store FEE housekeeping voltages
-void read_voltages(float voltages[], unsigned short spi_command[],
+int read_voltages(float voltages[], unsigned short spi_command[],
         unsigned short spi_data[])
 {
     // Define conversion factor from SPI readout to meaningful unit
@@ -386,10 +390,12 @@ void read_voltages(float voltages[], unsigned short spi_command[],
 	voltages[19] = spi_data[40] * cf;
 	voltages[21] = spi_data[41] * cf;
 	voltages[14] = spi_data[42] * cf;
+    
+    return 4; // number of SPI messages sent
 }
 
 // Determine which FEEs are present
-void read_fees_present(unsigned short fees_present[],
+int read_fees_present(unsigned short fees_present[],
         unsigned short spi_command[], unsigned short spi_data[])
 {
     spi_command[0] = SPI_SOM_HKFPGA; // som
@@ -440,10 +446,12 @@ void read_fees_present(unsigned short fees_present[],
     fees_present[29] = (spi_data[3] & 0x2000) >> 13;
     fees_present[30] = (spi_data[3] & 0x4000) >> 14;
     fees_present[31] = (spi_data[3] & 0x8000) >> 15;
+    
+    return 1; // number of SPI messages sent
 }
 
 // Read nstimer, tack count and rate, and trigger count and rate
-void read_nstimer_trigger_rate(unsigned short spi_command[],
+int read_nstimer_trigger_rate(unsigned short spi_command[],
         unsigned short spi_data[])
 {
     spi_command[0] = SPI_SOM_TFPGA; //som
@@ -458,10 +466,11 @@ void read_nstimer_trigger_rate(unsigned short spi_command[],
     spi_command[9] = 0x0008;			
     spi_command[10] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_command, spi_data);
+    return 1; // number of SPI messages sent
 }
 
 // Reset trigger and nstimer
-void reset_trigger_and_nstimer(unsigned short spi_command[],
+int reset_trigger_and_nstimer(unsigned short spi_command[],
         unsigned short spi_data[])
 {
     spi_command[0] = SPI_SOM_TFPGA; //som
@@ -476,10 +485,11 @@ void reset_trigger_and_nstimer(unsigned short spi_command[],
 	spi_command[9] = 0x7888;			
 	spi_command[10] = SPI_EOM_TFPGA; //not used
 	transfer_message(spi_command, spi_data);
+    return 1; // number of SPI messages sent
 }
 
 // Set holdoff time
-void set_holdoff_time(unsigned short command_parameters[],
+int set_holdoff_time(unsigned short command_parameters[],
         unsigned short spi_command[], unsigned short spi_data[])
 {
     spi_command[0] = SPI_SOM_TFPGA; //som
@@ -494,10 +504,11 @@ void set_holdoff_time(unsigned short command_parameters[],
     spi_command[9] = 0x0008;			
     spi_command[10] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_command, spi_data);
+    return 1; // number of SPI messages sent
 }
 
 // Set TACK type and mode
-void set_tack_type_and_mode(unsigned short command_parameters[],
+int set_tack_type_and_mode(unsigned short command_parameters[],
         unsigned short spi_command[], unsigned short spi_data[])
 {
     spi_command[0] = SPI_SOM_TFPGA; //som
@@ -512,10 +523,11 @@ void set_tack_type_and_mode(unsigned short command_parameters[],
     spi_command[9] = 0x0008;			
     spi_command[10] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_command, spi_data);
+    return 1; // number of SPI messages sent
 }
 
 // Set trigger
-void set_trigger(unsigned short command_parameters[],
+int set_trigger(unsigned short command_parameters[],
         unsigned short spi_command[], unsigned short spi_data[])
 {
     spi_command[0] = SPI_SOM_TFPGA; //som
@@ -530,10 +542,11 @@ void set_trigger(unsigned short command_parameters[],
 	spi_command[9] = 0x0008;			
 	spi_command[10] = SPI_EOM_TFPGA; //not used
 	transfer_message(spi_command, spi_data);
+    return 1; // number of SPI messages sent
 }
 
 // Set trigger mask
-void set_trigger_mask(unsigned short trigger_mask[],
+int set_trigger_mask(unsigned short trigger_mask[],
         unsigned short spi_command[], unsigned short spi_data[])
 {
     unsigned short trigger_mask_commands[32];
@@ -609,10 +622,12 @@ void set_trigger_mask(unsigned short trigger_mask[],
     for (int i = 0; i < 8; i++) {
         trigger_mask[i + 24] = spi_data[i + 35];
     }
+    
+    return 4; // number of SPI messages sent
 }
 
 // Send sync commands
-void sync(unsigned short spi_command[], unsigned short spi_data[])
+int sync(unsigned short spi_command[], unsigned short spi_data[])
 {
     // Setup SYNC message.
     // Must do a SYNC before TAACK messages will be effective
@@ -683,4 +698,6 @@ void sync(unsigned short spi_command[], unsigned short spi_data[])
     spi_command[42] = 0x0000;			
     spi_command[43] = SPI_EOM_TFPGA; //not used
     transfer_message(spi_command + 33, spi_data + 33);
+    
+    return 4; // number of SPI messages sent
 }

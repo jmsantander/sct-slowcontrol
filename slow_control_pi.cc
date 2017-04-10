@@ -4,10 +4,8 @@
 
 #include <iostream>
 #include <string>
-#include <unistd.h>
 
-#include "sc_network.h"
-#include "sc_backplane.h"
+#include "picontrol.h"
 
 int main(int argc, char *argv[])
 {
@@ -18,36 +16,17 @@ int main(int argc, char *argv[])
     }
     std::string hostname = argv[1];
 
-    // Make a Backplane object and initialize for low level communication
-    Backplane backplane;
-    bool simulation_mode = false;
-    if (!backplane.pi_initialize_lowlevel()) {
-        // Enable these lines to quit - for normal use
-        //std::cout << "error: could not initialize low level backplane "
-        //    << "- exiting" << std::endl;
-        //return 1;
-        // Enable these lines to switch to simulation mode - for testing
-        std::cout << "warning: could not initialize low level backplane " 
-            << "- switching to simulation mode" << std::endl;
-        simulation_mode = true;
-    }
+    PiControl pi_control(hostname);
     
-    // Set up networking info
-    Network_info netinfo(PI, hostname);
-
     // Communicate with the server: on each loop send updated data and 
     // receive updated settings
-    std::cout << "communicating with the server...\n";
+    std::cout << "communicating with the server..." << std::endl;
     while (true) {
-        // Send and receive messages
-        backplane.synchronize_network(netinfo);
-        // Apply new settings
-        backplane.apply_settings(simulation_mode);
+        // Receive commands and return backplane variables
+        pi_control.synchronize_network();
+        // Apply new settings, if a command was received
+        pi_control.update_backplane_variables();
     }
 
-    // Shut down network
-    if (!shutdown_network(netinfo))
-        return 1;
-    
     return 0;
 }
