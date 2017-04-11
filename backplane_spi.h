@@ -33,6 +33,12 @@ int read_fees_present(unsigned short fees_present[],
 int read_nstimer_trigger_rate(unsigned short spi_command[],
         unsigned short spi_data[]);
 
+// Reset DACQ 1 power
+int reset_dacq1_power(unsigned short spi_command[], unsigned short spi_data[]);
+
+// Reset DACQ 2 power
+int reset_dacq2_power(unsigned short spi_command[], unsigned short spi_data[]);
+
 // Reset trigger and nstimer
 int reset_trigger_and_nstimer(unsigned short spi_command[],
         unsigned short spi_data[]);

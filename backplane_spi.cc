@@ -469,6 +469,42 @@ int read_nstimer_trigger_rate(unsigned short spi_command[],
     return 1; // number of SPI messages sent
 }
 
+// Reset DACQ 1 power
+int reset_dacq1_power(unsigned short spi_command[], unsigned short spi_data[])
+{
+	spi_command[0] = SPI_SOM_HKFPGA; //som
+	spi_command[1] = CW_DACQ1_PWR_RESET; //cw
+	spi_command[2] = 0x0111;
+	spi_command[3] = 0x1222;
+	spi_command[4] = 0x2333;
+	spi_command[5] = 0x3444;
+	spi_command[6] = 0x4555;
+	spi_command[7] = 0x5666;
+	spi_command[8] = 0x6777;
+	spi_command[9] = 0x7888;			
+	spi_command[10] = SPI_EOM_HKFPGA; //not used
+    transfer_message(spi_command, spi_data);
+    return 1; // number of SPI messages sent
+}
+
+// Reset DACQ 2 power
+int reset_dacq2_power(unsigned short spi_command[], unsigned short spi_data[])
+{
+	spi_command[0] = SPI_SOM_HKFPGA; //som
+	spi_command[1] = CW_DACQ2_PWR_RESET; //cw
+	spi_command[2] = 0x0111;
+	spi_command[3] = 0x1222;
+	spi_command[4] = 0x2333;
+	spi_command[5] = 0x3444;
+	spi_command[6] = 0x4555;
+	spi_command[7] = 0x5666;
+	spi_command[8] = 0x6777;
+	spi_command[9] = 0x7888;			
+	spi_command[10] = SPI_EOM_HKFPGA; //not used
+    transfer_message(spi_command, spi_data);
+    return 1; // number of SPI messages sent
+}
+
 // Reset trigger and nstimer
 int reset_trigger_and_nstimer(unsigned short spi_command[],
         unsigned short spi_data[])

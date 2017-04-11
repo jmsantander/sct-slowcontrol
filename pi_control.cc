@@ -131,6 +131,10 @@ void PiControl::update_backplane_variables()
     } else if (command_name == "reset_trigger_counter_and_timer") {
         num_spi_messages_sent = reset_trigger_and_nstimer(spi_command,
                 spi_data);
+    } else if (command_name == "reset_dacq1_power") {
+        num_spi_messages_sent = reset_dacq1_power(spi_command, spi_data);
+    } else if (command_name == "reset_dacq2_power") {
+        num_spi_messages_sent = reset_dacq2_power(spi_command, spi_data);
     } else if (command_name == "sync") {
         num_spi_messages_sent = sync(spi_command, spi_data);
     } else {
