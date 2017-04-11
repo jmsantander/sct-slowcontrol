@@ -1,13 +1,11 @@
-// tmcontrol.cc
+// tm_control.cc
 // Implementation of the class for mid-level target control
 
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "tmcontrol.h"
-#include "sc_network.h"
-#include "sc_protobuf.pb.h"
+#include "tm_control.h"
 
 bool TMControl::synchronize_network()
 {

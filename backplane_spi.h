@@ -1,7 +1,7 @@
 // Functions for implementing low level communication to the backplane
 
-#ifndef SC_LOWLEVEL
-#define SC_LOWLEVEL
+#ifndef BACKPLANE_SPI_H
+#define BACKPLANE_SPI_H
 
 // Initialize low level SPI communication
 // Return true if successful, false otherwise

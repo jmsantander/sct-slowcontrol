@@ -1,11 +1,11 @@
-// slow_control_pi.cc
+// pi.cc
 /* Listen for and execute remote user commands for the backplane. Continually
  * send out a status report back to the user for display by the GUI. */
 
 #include <iostream>
 #include <string>
 
-#include "picontrol.h"
+#include "pi_control.h"
 
 int main(int argc, char *argv[])
 {

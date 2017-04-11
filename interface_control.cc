@@ -1,11 +1,9 @@
-// interfacecontrol.h
+// interface_control.h
 // Implementation for the class for the high-level user interface
 
 #include <iostream>
 
-#include "interfacecontrol.h"
-#include "sc_network.h"
-#include "sc_protobuf.pb.h"
+#include "interface_control.h"
 
 bool InterfaceControl::synchronize_network()
 {
@@ -59,10 +57,10 @@ bool InterfaceControl::synchronize_network()
     return true;
 }
 
-void InterfaceControl::update_highlevel_command(std::string highlevel_command,
-        std::string highlevel_parameter)
+void InterfaceControl::update_high_level_command(std::string high_level_command,
+        std::string high_level_parameter)
 {
-    run_settings.set_highlevel_command(highlevel_command);
-    run_settings.set_highlevel_parameter(highlevel_parameter);
+    run_settings.set_high_level_command(high_level_command);
+    run_settings.set_high_level_parameter(high_level_parameter);
     updates_to_send = true;
 }

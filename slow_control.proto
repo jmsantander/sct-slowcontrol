@@ -23,7 +23,7 @@ message MessageWrapper {
 
 message RunSettings {
     optional string high_level_command = 1;
-    optional string highlevel_parameter = 2;
+    optional string high_level_parameter = 2;
 }
 
 message LowLevelCommand {

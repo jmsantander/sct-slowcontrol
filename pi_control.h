@@ -1,14 +1,14 @@
-// picontrol.h
+// pi_control.h
 // Header file containing the class for mid-level pi control
 
-#ifndef SC_PICONTROL
-#define SC_PICONTROL
+#ifndef PI_CONTROL_H
+#define PI_CONTROL_H
 
 #include <string>
 
-#include "sc_network.h"
-#include "sc_protobuf.pb.h"
-#include "backplane_lowlevel.h"
+#include "network.h"
+#include "slow_control.pb.h"
+#include "backplane_spi.h"
 
 // TODO: load constants from config file
 const int NUM_FEES = 32; // number of modules allowed for in underlying code

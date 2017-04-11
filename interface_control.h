@@ -1,14 +1,14 @@
-// interfacecontrol.h
+// interface_slow_control.h
 // Header file containing the class for the high-level user interface
 
-#ifndef SC_INTERFACECONTROL
-#define SC_INTERFACECONTROL
+#ifndef INTERFACE_CONTROL_H
+#define INTERFACE_CONTROL_H
 
 #include <string>
 #include <vector>
 
-#include "sc_network.h"
-#include "sc_protobuf.pb.h"
+#include "network.h"
+#include "slow_control.pb.h"
 
 class InterfaceControl {
 protected:
@@ -31,8 +31,8 @@ public:
     }
     bool synchronize_network();
     
-    void update_highlevel_command(std::string highlevel_command,
-            std::string highlevel_parameter="");
+    void update_high_level_command(std::string high_level_command,
+            std::string high_level_parameter="");
     
     bool exit() {
         return (shutdown_network(netinfo));

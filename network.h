@@ -1,7 +1,7 @@
 // Functions for implementing slow control network communication
 
-#ifndef SC_NETWORK
-#define SC_NETWORK
+#ifndef NETWORK_H
+#define NETWORK_H
 
 #include <string>
 #include <vector>

@@ -1,13 +1,10 @@
-// picontrol.cc
+// pi_control.cc
 // File containing the implementation for the class for mid-level pi control
 
 #include <iostream>
 #include <algorithm>
 
-#include "picontrol.h"
-
-#include "sc_network.h"
-#include "backplane_lowlevel.h"
+#include "pi_control.h"
 
 // number of uint parameters to send to backplane low level code
 const int NUM_COMMAND_PARAMETERS = 4; 

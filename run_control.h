@@ -1,15 +1,15 @@
-// servercontrol.h
+// run_control.h
 // Header file containing the class for mid-level server control and logging
 
-#ifndef SC_SERVERCONTROL
-#define SC_SERVERCONTROL
+#ifndef RUN_CONTROL_H
+#define RUN_CONTROL_H
 
 #include <string>
 #include <vector>
 #include <queue>
 
-#include "sc_network.h"
-#include "sc_protobuf.pb.h"
+#include "network.h"
+#include "slow_control.pb.h"
 
 struct CommandDefinition {
     std::string command_name;
@@ -46,7 +46,7 @@ struct HighLevelCommand {
     std::vector<LowLevelCommand> commands;
 };
 
-class ServerControl {
+class RunControl {
 protected:
     Network_info netinfo;
     slow_control::RunSettings run_settings;
@@ -68,7 +68,7 @@ protected:
     std::string db_username;
     std::string db_password;
 public:
-    ServerControl(std::string host, std::string username,
+    RunControl(std::string host, std::string username,
             std::string password) : netinfo(SERVER) {
         // Verify that the version of the Protocol Buffer library we linked
         // against is compatible with the version of the headers we compiled
